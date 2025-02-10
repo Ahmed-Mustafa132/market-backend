@@ -8,6 +8,9 @@ const mongoose = require('mongoose');
 dotenv.config();
 const port = process.env.port;
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 // Import routes
 const userRouter = require('./router/userRouter');
 
