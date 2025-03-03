@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
             validator: function (value) {
                 return /^\d{11}$/.test(value);
             },
-            message: 'Phone number must be 10 digits'
+            message: 'Phone number must be 11 digits'
         }
     },
     identityFront: {
@@ -62,13 +62,15 @@ const userSchema = new mongoose.Schema({
     },
     BusinessRecords: {
         type: String,
-
+        required: function () {
+            return this.role === 'market';
+        }
     },
     taxID: {
         type: String,
-        // required: function () {
-        //     return this.role === 'market';
-        // }
+        required: function () {
+            return this.role === 'market';
+        }
     }
 }, {
     timestamps: true
