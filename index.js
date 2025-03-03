@@ -10,10 +10,7 @@ const cors = require('cors');
 dotenv.config();
 const port = process.env.port;
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}));
+app.use(cors());
 
 // Middleware
 app.use(express.json());
