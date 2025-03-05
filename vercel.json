@@ -8,11 +8,6 @@
     ],
     "routes": [
         {
-            "src": "/user/register",
-            "methods": ["POST", "OPTIONS"],
-            "dest": "index.js"
-        },
-        {
             "src": "/(.*)",
             "dest": "index.js"
         }
