@@ -11,16 +11,22 @@ dotenv.config();
 const port = process.env.port;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 
 app.use(cors());
 =======
+=======
+>>>>>>> Stashed changes
 const corsOptions = {
   origin: 'https://market-frontend-rouge.vercel.app',
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 // Middleware
