@@ -5,23 +5,23 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-
+ 
 // Load environment variables from .env file
 dotenv.config();
 const port = process.env.port;
 
 
-app.use(cors());
-
 const corsOptions = {
-  origin: '*',  // استخدم "*" للسماح بكل الأصول، أو يمكنك تحديد الأصول المسموح بها
-  optionsSuccessStatus: 200
+  origin: ['https://market-frontend-rouge.vercel.app'], // رابط الفرونت إند المسموح له بالوصول
+  credentials: true,  // السماح بإرسال واستقبال الكوكيز والهيدرز
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // الطرق المسموح بها
+  allowedHeaders: ['Content-Type', 'Authorization'] // الهيدرز المسموح بها
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
 
 // Middleware
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Import routes
 const userRouter = require('./router/userRouter');
@@ -30,6 +30,8 @@ const userRouter = require('./router/userRouter');
 // Mount routes - all user related routes will be prefixed with '/user'
 app.use('/user', userRouter);
 // app.use('/product', productRouter);
+
+dbConn();
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)
