@@ -11,7 +11,7 @@ dotenv.config();
 const port = process.env.port;
 
 const corsOptions = {
-  origin: 'https://market-frontend-rouge.vercel.app/',
+  origin: 'https://market-frontend-rouge.vercel.app',
   optionsSuccessStatus: 200
 };
 
