@@ -10,24 +10,15 @@ const cors = require('cors');
 dotenv.config();
 const port = process.env.port;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
 
 app.use(cors());
-=======
-=======
->>>>>>> Stashed changes
+
 const corsOptions = {
-  origin: 'https://market-frontend-rouge.vercel.app',
+  origin: '*',  // استخدم "*" للسماح بكل الأصول، أو يمكنك تحديد الأصول المسموح بها
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 // Middleware
 app.use(express.json());
