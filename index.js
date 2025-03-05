@@ -10,9 +10,18 @@ const cors = require('cors');
 dotenv.config();
 const port = process.env.port;
 
+<<<<<<< Updated upstream
 
 
 app.use(cors());
+=======
+const corsOptions = {
+  origin: 'https://market-frontend-rouge.vercel.app',
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+>>>>>>> Stashed changes
 
 // Middleware
 app.use(express.json());
