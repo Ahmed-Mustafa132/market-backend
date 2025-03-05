@@ -11,14 +11,7 @@ dotenv.config();
 const port = process.env.port;
 
 
-const corsOptions = {
-  origin: ['https://market-frontend-rouge.vercel.app'], // رابط الفرونت إند المسموح له بالوصول
-  credentials: true,  // السماح بإرسال واستقبال الكوكيز والهيدرز
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // الطرق المسموح بها
-  allowedHeaders: ['Content-Type', 'Authorization'] // الهيدرز المسموح بها
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
 // Middleware
@@ -30,7 +23,6 @@ const userRouter = require('./router/userRouter');
 // Mount routes - all user related routes will be prefixed with '/user'
 app.use('/user', userRouter);
 // app.use('/product', productRouter);
-
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)
