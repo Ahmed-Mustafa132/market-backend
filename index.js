@@ -11,7 +11,12 @@ dotenv.config();
 const port = process.env.port;
 
 
-app.use(cors());
+const corsOptions = {
+  origin: '*',  // استخدم "*" للسماح بكل الأصول، أو يمكنك تحديد الأصول المسموح بها
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
