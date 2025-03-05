@@ -32,28 +32,37 @@ const login = async (req, res) => {
   }
 };
 const register = async (req, res) => {
+  console.log('Received file:', req.files); // Log the received file
+  console.log('Received body:', req.body); // Log the received body
   try {
-    const { name, email, password, role, phone, taxID, BusinessRecords } = req.body;
+    
+    const { name, email, password, role, phone, taxID, BusinessRecords, identityFront, identityBack } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const userData = {
-      name, email, password: hashedPassword,
-      role, phone, taxID, BusinessRecords
-    };
-
+    let userData 
     if (role === 'rep') {
+      userData = {
+        name, email, password: hashedPassword,
+        role, phone, identityFront, identityBack,
+      };
+
       const uploadPromises = [
         uploadToGCS(req.files.identityFront[0]).then(url => userData.identityFront = url),
         uploadToGCS(req.files.identityBack[0]).then(url => userData.identityBack = url)
       ];
       await Promise.all(uploadPromises);
-    }else if (role === 'market' ) {
+    } else if (role === 'market') {
+      userData = {
+        name, email, password: hashedPassword,
+        role, phone, taxID, BusinessRecords
+      };
       const uploadPromises = [
         uploadToGCS(req.files.BusinessRecords[0]).then(url => userData.BusinessRecords = url),
         uploadToGCS(req.files.taxID[0]).then(url => userData.taxID = url)
       ];
       await Promise.all(uploadPromises);
     }
+    console.log('userData:', userData);
     const newUser = new User(userData);
     await newUser.save();
 
@@ -65,6 +74,7 @@ const register = async (req, res) => {
 
     res.status(201).json({ user: newUser, token });
   } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ message: 'Error creating user', error: error.message });
   }
 };
