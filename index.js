@@ -10,12 +10,12 @@ const cors = require('cors');
 dotenv.config();
 const port = process.env.port;
 
-const corsOptions = {
-  origin: 'https://market-frontend-rouge.vercel.app',
-  optionsSuccessStatus: 200
-};
 
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
 
 // Middleware
 app.use(express.json());
