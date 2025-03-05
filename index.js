@@ -31,6 +31,8 @@ const productRouter = require('./router/productRouter');
 app.use('/user', userRouter);
 app.use('/product', productRouter);
 
+dbConn();
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)
     .then(() => console.log('Connected to MongoDB'))
