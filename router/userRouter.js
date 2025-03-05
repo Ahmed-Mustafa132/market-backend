@@ -6,7 +6,9 @@ const { getUsers, login, register } = require('../controllers/userController');
 
 const uploadFields = upload.fields([
     { name: 'identityFront', maxCount: 1 },
-    { name: 'identityBack', maxCount: 1 }
+    { name: 'identityBack', maxCount: 1 },
+    { name: 'BusinessRecords', maxCount: 1 },
+    { name: 'taxID', maxCount: 1 }
 ]);
 
 router.get('/', getUsers);

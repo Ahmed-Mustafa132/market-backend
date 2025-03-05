@@ -41,14 +41,19 @@ const register = async (req, res) => {
       role, phone, taxID, BusinessRecords
     };
 
-    if (role === 'rep' && req.files) {
+    if (role === 'rep') {
       const uploadPromises = [
         uploadToGCS(req.files.identityFront[0]).then(url => userData.identityFront = url),
         uploadToGCS(req.files.identityBack[0]).then(url => userData.identityBack = url)
       ];
       await Promise.all(uploadPromises);
+    }else if (role === 'market' ) {
+      const uploadPromises = [
+        uploadToGCS(req.files.BusinessRecords[0]).then(url => userData.BusinessRecords = url),
+        uploadToGCS(req.files.taxID[0]).then(url => userData.taxID = url)
+      ];
+      await Promise.all(uploadPromises);
     }
-
     const newUser = new User(userData);
     await newUser.save();
 
