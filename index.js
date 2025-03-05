@@ -11,11 +11,11 @@ dotenv.config();
 const port = process.env.port;
 
 
-app.use(cors());
-
 const corsOptions = {
-  origin: '*',  // استخدم "*" للسماح بكل الأصول، أو يمكنك تحديد الأصول المسموح بها
-  optionsSuccessStatus: 200
+  origin: ['https://market-frontend-rouge.vercel.app'], // رابط الفرونت إند المسموح له بالوصول
+  credentials: true,  // السماح بإرسال واستقبال الكوكيز والهيدرز
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // الطرق المسموح بها
+  allowedHeaders: ['Content-Type', 'Authorization'] // الهيدرز المسموح بها
 };
 
 app.use(cors(corsOptions));
