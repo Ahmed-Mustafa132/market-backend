@@ -5,11 +5,9 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
- 
 // Load environment variables from .env file
 dotenv.config();
 const port = process.env.port;
-
 
 app.use(cors());
 app.use(express.json());
@@ -18,11 +16,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Import routes
 const userRouter = require('./router/userRouter');
-// const productRouter = require('./router/productRouter');
+const productRouter = require('./router/productRouter');
 
 // Mount routes - all user related routes will be prefixed with '/user'
 app.use('/user', userRouter);
-// app.use('/product', productRouter);
+app.use('/product', productRouter);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)

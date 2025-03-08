@@ -18,12 +18,13 @@ const productSchema = new mongoose.Schema({
     },
     image: {
         type: String,
+        required: true,
     },
     market: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        // required: true
-    }
+        required: true
+    },
 }, {
     timestamps: true
 });

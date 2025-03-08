@@ -13,6 +13,14 @@ const getUsers = async (req, res) => {
     res.status(500).json({ message: 'Error fetching users', error });
   }
 };
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id,"name");
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user', error });
+  }
+};
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -85,6 +93,7 @@ const register = async (req, res) => {
 
 module.exports = {
   getUsers,
+  getUserById,
   login,
   register
 

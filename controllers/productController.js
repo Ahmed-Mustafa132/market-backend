@@ -3,7 +3,7 @@ const { uploadToGCS } = require('../utils/fileUploader')
 const getProducts = async (req, res) => {
     try {
         const products = await Product.find()
-        res.json(products)
+        res.status(200).json({ message: 'Products fetched successfully', data: products })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -57,7 +57,7 @@ const updateProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id)
         if (req.body.title != null) {
-            product.title
+            product.title = req.body.title
         }
         if (req.body.price != null) {
             product.price = req.body.price
@@ -77,8 +77,7 @@ const updateProduct = async (req, res) => {
     }
 const deleteProduct = async (req, res) => {
         try {
-            const product = await Product.findById(req.params.id)
-            await product.remove()
+            await Product.findByIdAndDelete(req.params.id)
             res.json({ message: 'Product deleted' })
         } catch (error) {
             res.status(500).json({ message: error.message })
