@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 
-const userSchema = new mongoose.Schema({
+const representativeSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -28,10 +28,31 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Password must be between 7 and 64 characters'
         }
+    },
+    phone: {
+        type: String,
+        trim: true,
+        unique: true,
+        length: 11,
+        required: true,
+        validate: {
+            validator: function (value) {
+                return /^\d{11}$/.test(value);
+            },
+            message: 'Phone number must be 11 digits'
+        }
+    },
+    identityFront: {
+        type: String,
+        required: true
+    },
+    identityBack: {
+        type: String,
+        required: true
     }
 }, {
-    timestamps: true,
-}
-);
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+    timestamps: true
+});
+const Representative = mongoose.model('Representative', representativeSchema);
+module.exports = Representative;
+        

@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-
-const userSchema = new mongoose.Schema({
+const marketSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -28,10 +27,30 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Password must be between 7 and 64 characters'
         }
+    }, phone: {
+        type: String,
+        trim: true,
+        unique: true,
+        length: 11,
+        required: true,
+        validate: {
+            validator: function (value) {
+                return /^\d{11}$/.test(value);
+            },
+            message: 'Phone number must be 11 digits'
+        }
+    },
+
+    BusinessRecords: {
+        type: String,
+        required: true
+    },
+    taxID: {
+        type: String,
+        required: true
     }
 }, {
-    timestamps: true,
-}
-);
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+    timestamps: true
+});
+const Market = mongoose.model('Market', marketSchema);
+module.exports = Market;

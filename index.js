@@ -15,11 +15,15 @@ app.use(express.json());
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 // Import routes
+const marketRouter = require('./router/marketRouter');
+const representativeRouter = require('./router/representativeRouter');
 const userRouter = require('./router/userRouter');
 const productRouter = require('./router/productRouter');
 
 // Mount routes - all user related routes will be prefixed with '/user'
-app.use('/user', userRouter);
+app.use('/user/market', marketRouter);
+app.use('/user/representative', representativeRouter);
+app.use('/user/user', userRouter);
 app.use('/product', productRouter);
 
 // MongoDB connection
