@@ -43,12 +43,24 @@ const representativeSchema = new mongoose.Schema({
         }
     },
     identityFront: {
-        type: String,
-        required: true
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
     },
     identityBack: {
-        type: String,
-        required: true
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
     }
 }, {
     timestamps: true

@@ -42,12 +42,24 @@ const marketSchema = new mongoose.Schema({
     },
 
     BusinessRecords: {
-        type: String,
-        required: true
+       url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
     },
     taxID: {
-        type: String,
-        required: true
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
     }
 }, {
     timestamps: true

@@ -1,6 +1,8 @@
 const User = require('../model/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require("google-auth-library");
+
 
 const getAllUser = async (req, res) => {
     try {
@@ -57,9 +59,54 @@ const register = async (req, res) => {
         console.log(error);
     }
 };
+
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const google = async (req, res) => {
+    try {
+        const { token } = req.body;
+        // التحقق من صحة الـ Token القادم من Google
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        
+        const payload = ticket.getPayload(); // معلومات المستخدم
+        const { sub, email, name } = payload;
+        
+        let user = await User.findOne({ email });
+        
+        if (!user) {
+            const randomPassword = Math.random().toString(36).slice(-10);
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+            user = new User({
+                name,
+                email,
+                password: hashedPassword,
+            });
+            
+            await user.save();
+        }
+        
+        // إنشاء JWT خاص بالتطبيق
+        const userToken = jwt.sign(
+            { userId: sub, email, name },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+        
+        res.json({ token: userToken, user: { email, name } });
+    } catch (error) {
+        res.status(401).json({ message: "Invalid Token" });
+        console.log(error)
+    }
+}
+
 module.exports = {
     getAllUser,
     getUserById,
     login,
-    register
+    register,
+    google
 };

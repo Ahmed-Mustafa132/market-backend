@@ -1,23 +1,46 @@
 const Representative = require("../model/representativeModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { uploadToGCS } = require("../utils/fileUploader");
+const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+
 const getAllRepresentative = async (req, res) => {
     try {
-        const Representatives = await Representative.find({});
-        res.status(200).json(Representatives);
+        const representatives = await Representative.find({});
+        res.status(200).json(representatives);
     } catch (error) {
         res.status(500).json({ message: "Error fetching Representatives", error });
     }
 };
+
 const getRepresentativeById = async (req, res) => {
-    try {
-        const Representative = await Representative.findById(req.params.id, "name");
-        res.status(200).json(Representative);
+    try {   
+        const representative = await Representative.findById(req.params.id);
+        if (!representative) {
+            return res.status(404).json({ message: "Representative not found" });
+        }
+
+        // Generate fresh signed URLs for the identity documents
+        const identityFrontSignedUrl = await generateSignedUrl(representative.identityFront.fileName);
+        const identityBackSignedUrl = await generateSignedUrl(representative.identityBack.fileName);
+
+        // Create a response object with signed URLs
+        const responseData = {
+            _id: representative._id,
+            name: representative.name,
+            email: representative.email,
+            phone: representative.phone,
+            identityFront: identityFrontSignedUrl,
+            identityBack: identityBackSignedUrl,
+            createdAt: representative.createdAt,
+            updatedAt: representative.updatedAt
+        };
+
+        res.status(200).json(responseData);
     } catch (error) {
         res.status(500).json({ message: "Error fetching Representative", error });
     }
 };
+
 const login = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -34,47 +57,73 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: Representative.email, id: Representative._id },
+            { email: rep.email, id: rep._id }, // تصحيح: استخدام rep بدلاً من Representative
             process.env.JWT_SECRET,
             { expiresIn: "24h" }
         );
-        res.status(200).json({ Representative, token });
+
+        res.status(200).json({token});
     } catch (error) {
-        status(500).json({ message: "Something went wrong", error });
+        res.status(500).json({ message: "Something went wrong", error });
     }
 };
+
 const register = async (req, res) => {
     try {
-        const { name, email, password, role, phone, identityFront, identityBack } =
-            req.body;
+        const { name, email, password, role, phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const RepresentativeData = {
+
+        // Upload identity documents and get both public URLs and file names
+        const identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
+        const identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+
+        const representativeData = {
             name,
             email,
             password: hashedPassword,
             role,
             phone,
-            identityFront,
-            identityBack,
+            identityFront: {
+                url: identityFrontUpload.publicUrl,
+                fileName: identityFrontUpload.fileName
+            },
+            identityBack: {
+                url: identityBackUpload.publicUrl,
+                fileName: identityBackUpload.fileName
+            }
         };
-        const uploadPromises = [
-            uploadToGCS(req.files.identityFront[0]).then(url => RepresentativeData.identityFront = url),
-            uploadToGCS(req.files.identityBack[0]).then(url => RepresentativeData.identityBack = url),
-        ];
-        await Promise.all(uploadPromises);
-        const newRepresentative = new Representative(RepresentativeData);
+
+        const newRepresentative = new Representative(representativeData);
         await newRepresentative.save();
+
         const token = jwt.sign(
             { email: newRepresentative.email, id: newRepresentative._id },
             process.env.JWT_SECRET,
             { expiresIn: "24h" }
         );
-        res.status(201).json({ Representative: newRepresentative, token });
+
+        // Generate signed URLs for the response
+        const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
+        const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
+
+        // Create a response object with signed URLs
+        const responseData = {
+            _id: newRepresentative._id,
+            name: newRepresentative.name,
+            email: newRepresentative.email,
+            phone: newRepresentative.phone,
+            identityFront: identityFrontSignedUrl,
+            identityBack: identityBackSignedUrl,
+            token
+        };
+
+        res.status(201).json(responseData);
     } catch (error) {
         res.status(500).json({ message: "Something went wrong", error });
         console.log(error);
     }
 };
+
 module.exports = {
     getAllRepresentative,
     getRepresentativeById,

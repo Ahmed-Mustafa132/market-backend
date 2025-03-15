@@ -26,10 +26,28 @@ const uploadToGCS = async (file) => {
         blobStream.on('error', reject);
         blobStream.on('finish', () => {
             const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-            resolve(publicUrl);
+            resolve({
+                publicUrl,
+                fileName: blob.name
+            });
         });
         blobStream.end(compressedImageBuffer);
     });
 };
+const generateSignedUrl = async (fileName, expirationMinutes = 60) => {
+    try {
+        const options = {
+            version: 'v4',
+            action: 'read',
+            expires: Date.now() + expirationMinutes * 60 * 1000, // تحويل الدقائق إلى ميلي ثانية
+        };
 
-module.exports = { uploadToGCS };
+        const [url] = await bucket.file(fileName).getSignedUrl(options);
+        return url;
+    } catch (error) {
+        console.error('Error generating signed URL:', error);
+        throw error;
+    }
+};
+
+module.exports = { uploadToGCS, generateSignedUrl };
