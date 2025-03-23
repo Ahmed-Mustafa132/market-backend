@@ -1,38 +1,49 @@
-const Market = require('../model/marketModel');
-const Representative = require('../model/representativeModel');
-const validateMarketRegistration = async (req, res, next) => {
-    const { email } = req.body;
+const jwt = require("jsonwebtoken")
 
-    const existingMarket = await Market.findOne({ email });
-    if (existingMarket) {
-        return res.status(400).json({ message: 'Market already exists' });
+const checkAuth = async (req, res, next) => {
+    const token = req.header("Authorization");
+    if (!token) {
+        req.isAuthenticated = false;
+        return res.status(401).json({ massage: "يرجي تسجيل الدخول" });
     }
-
-    if (!req.files?.BusinessRecords || !req.files?.taxID) {
-        return res.status(400).json({ message: 'Identity documents required for rep role' });
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        req.isAuthenticated = true;
+        return res.json(decoded.role);
     }
-
-    next();
-};
-const validateRepresentativeRegistration = async (req, res, next) => {
-    const { email } = req.body;
-    const existingRepresentative = await Representative.findOne({ email });
-    if (existingRepresentative) {
-        return res.status(400).json({ message: 'Representative already exists' });
+    catch (error) {
+        req.isAuthenticated = false;
+        console.log(error);
+        return res.status(401).json({ massage: "جلسة غير صالحة" });
     }
-    if (!req.files?.identityFront || !req.files?.identityBack) {
-        return res.status(400).json({ message: 'Identity documents required for rep role' });
-    }
-    next();
 }
 
-const validateUserRegistration = async (req, res, next) => {
-    const { email } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+const isRep = async (req, res, next) => {
+    
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role == "representative") {
+            req.user = decoded;
+            next();
+        }
+    } catch (error) {
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب " });
     }
-    next();
 }
-
-module.exports = { validateMarketRegistration, validateRepresentativeRegistration, validateUserRegistration };
+const verifyMassage = async (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role == "representative"|| decoded.role == "manger") {
+            req.user = decoded;
+            next();
+        }
+    } catch (error) {
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او مدير " });
+    }
+}
+module.exports = { isRep, checkAuth, verifyMassage }

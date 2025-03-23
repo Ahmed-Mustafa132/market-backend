@@ -61,6 +61,22 @@ const representativeSchema = new mongoose.Schema({
             type: String,
             required: true
         }
+    },
+    role: {
+        type: String,
+        default:"representative"
+    },
+    location: {
+
+        longitude: {
+            type: Number,
+            default: 0
+        },
+        latitude: {
+            type: Number,
+            default: 0
+        }
+
     }
 }, {
     timestamps: true

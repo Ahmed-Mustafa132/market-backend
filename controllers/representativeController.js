@@ -1,23 +1,66 @@
 const Representative = require("../model/representativeModel");
+const Mission = require("../model/missionModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
-
 const getAllRepresentative = async (req, res) => {
+    let data = []
     try {
-        const representatives = await Representative.find({});
-        res.status(200).json(representatives);
+        const representatives = await Representative.find({}, ["name", "id"]);
+        for (const rep of representatives) {
+        
+            const missionComplet = await Mission.countDocuments({ complete: true, representative: rep.id });
+            const missionUnComplet = await Mission.countDocuments({ complete: false, representative: rep.id });
+
+            const newRep = {
+                id: rep.id,
+                name: rep.name,
+                missionComplet: missionComplet,
+                missionUnComplet:missionUnComplet
+            }
+            data.push(newRep)
+        }
+        res.status(200).json({ massage: "تم جلب المندوبين بنجاح", data: data });
     } catch (error) {
-        res.status(500).json({ message: "Error fetching Representatives", error });
+        res.status(500).json({ message: "لم نستطع جلب المندوبين", error });
     }
 };
+const searchInRepresentative = async (req, res) => {
+    let  data = []
+    let representative 
+    try {
+        
+        if (req.params.name == "undefined") {
+            representative = await Representative.find({},["name", "id"])
+        } else {
+            representative = await Representative.find({ name: {$regex:req.params.name} }, ["name", "id"])
+        }
+        for (const rep of representative) {
 
+            const missionComplet = await Mission.countDocuments({ complete: true, representative: rep.id });
+            const missionUnComplet = await Mission.countDocuments({ complete: false, representative: rep.id });
+
+            const newRep = {
+                id: rep.id,
+                name: rep.name,
+                missionComplet: missionComplet,
+                missionUnComplet: missionUnComplet
+            }
+            data.push(newRep)
+        }
+        res.status(200).json({ massage: "تم جلب المندوبين بنجاح", data: data });
+        
+    } catch (error) {
+        res.status(404).json({ message: "لا يوجد مندوبين بهذا لاسم    ", error });
+    }
+}
 const getRepresentativeById = async (req, res) => {
-    try {   
+    try {
         const representative = await Representative.findById(req.params.id);
         if (!representative) {
             return res.status(404).json({ message: "Representative not found" });
         }
+        console.log(representative)
 
         // Generate fresh signed URLs for the identity documents
         const identityFrontSignedUrl = await generateSignedUrl(representative.identityFront.fileName);
@@ -31,13 +74,36 @@ const getRepresentativeById = async (req, res) => {
             phone: representative.phone,
             identityFront: identityFrontSignedUrl,
             identityBack: identityBackSignedUrl,
+            location: representative.location,
             createdAt: representative.createdAt,
             updatedAt: representative.updatedAt
+
         };
 
         res.status(200).json(responseData);
     } catch (error) {
         res.status(500).json({ message: "Error fetching Representative", error });
+    }
+};
+const uploudLocation = async (req, res) => {
+    try {
+        const { latitude, longitude } = req.body;
+
+
+        console.log(req.body)
+        console.log(req.user)
+        const representative = await Representative.findById(req.user.id);
+        if (!representative) {
+            return res.status(404).json({ message: "Representative not found" });
+        }
+        representative.location = {
+            longitude: longitude, latitude: latitude
+        };
+        console.log(representative)
+        await representative.save();
+        res.status(200).json({ message: "Location updated successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating location", error });
     }
 };
 
@@ -57,12 +123,12 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: rep.email, id: rep._id }, // تصحيح: استخدام rep بدلاً من Representative
+            { email: rep.email, id: rep._id, role: rep.role }, // تصحيح: استخدام rep بدلاً من Representative
             process.env.JWT_SECRET,
             { expiresIn: "24h" }
         );
 
-        res.status(200).json({token});
+        res.status(200).json({ token });
     } catch (error) {
         res.status(500).json({ message: "Something went wrong", error });
     }
@@ -126,7 +192,9 @@ const register = async (req, res) => {
 
 module.exports = {
     getAllRepresentative,
+    searchInRepresentative,
     getRepresentativeById,
+    uploudLocation,
     login,
     register,
 };

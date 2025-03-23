@@ -1,14 +1,34 @@
 const Market = require("../model/marketModel");
+const Mission = require("../model/missionModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
 
 const getAllMarket = async (req, res) => {
+  let data = []
+  let totleSales = 0
   try {
-    const Markets = await Market.find({});
-    res.status(200).json(Markets);
+    const Markets = await Market.find({}, ["id", "name"]);
+    for (const market of Markets) {
+      const missions = await Mission.find({ market: market.id })
+      for (const mission of missions) {
+         mission.products.forEach((total) => {
+           totleSales += total.quantity
+        }, 0);
+      }
+      
+      const newMarket = {
+        id:market.id,
+        name: market.name,
+        missions: missions.length,
+        totleSales: totleSales
+      }
+      data.push(newMarket)
+    }
+    res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: data });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching Markets", error });
+    console.log(error)
+    res.status(500).json({ message: "Error fetching Markets", error:error });
   }
 };
 const getMarketById = async (req, res) => {
@@ -32,12 +52,43 @@ const getMarketById = async (req, res) => {
       createdAt: market.createdAt,
       updatedAt: market.updatedAt,
     };
-    res.status(200).json(MarketData);
+    res.status(200).json({massage: "تم جلب المتاجر بنجاح", data: MarketData});
   } catch (error) {
     res.status(500).json({ message: "Error fetching Market", error });
     console.log(error);
   }
 };
+const searchInMarket = async (req, res) => {
+  let data = []
+  let totleSales = 0
+  let missions
+  try {
+    if (req.params.name == "undefined") {
+      Markets = await Market.find({}, ["name", "id"])
+    } else {
+      Markets = await Market.find({ name: { $regex: req.params.name } }, ["name", "id"])
+    }    for (const market of Markets) {
+      const missions = await Mission.find({ market: market.id })
+      for (const mission of missions) {
+        mission.products.forEach((total) => {
+          totleSales += total.quantity
+        }, 0);
+      }
+
+      const newMarket = {
+        id: market.id,
+        name: market.name,
+        missions: missions.length,
+        totleSales: totleSales
+      }
+      data.push(newMarket)
+    }
+    res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: data });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Error fetching Markets", error: error });
+  }
+}
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -49,7 +100,7 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = jwt.sign({email:market.email, id: market._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: market.email, id: market._id }, process.env.JWT_SECRET, {
       expiresIn: "24h",
     });
     res.status(200).json({ token });
@@ -83,7 +134,7 @@ const register = async (req, res) => {
       password: hashedPassword,
       role,
       phone,
-      taxID:{
+      taxID: {
         url: taxIdUpload.publicUrl,
         fileName: taxIdUpload.fileName,
       },
@@ -92,7 +143,7 @@ const register = async (req, res) => {
         fileName: BusinessRecordsUpload.fileName,
       },
     };
-    
+
 
     const newMarket = new Market(MarketData);
     await newMarket.save();
@@ -111,10 +162,23 @@ const register = async (req, res) => {
       .json({ message: "Error creating Market", error: error.message });
   }
 };
+const deleteMarket = async (req, res) => {
+  try {
+    const market = await Market.findByIdAndDelete(req.params.id);
+    if (!market) {
+      return res.status(404).json({ message: "Market not found" });
+    }
+    res.status(200).json({ message: "Market deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting Market", error });
+  }
+};
 
 module.exports = {
   getAllMarket,
+  searchInMarket,
   getMarketById,
   login,
   register,
+  deleteMarket
 };

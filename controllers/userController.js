@@ -6,8 +6,8 @@ const { OAuth2Client } = require("google-auth-library");
 
 const getAllUser = async (req, res) => {
     try {
-        const users = await user.find({});
-        res.status(200).json(users);
+        const users = await User.find({},"name");
+        res.status(200).json({massage: "تم جلب المتخدمين بنجاح ", data:users});
     } catch (error) {
         res.status(500).json({ message: 'Error fetching users', error });
     }
@@ -20,6 +20,20 @@ const getUserById = async (req, res) => {
         res.status(500).json({ message: 'Error fetching user', error });
     }
 };
+const searchInUser = async (req, res) => {
+            console.log(req.params.name)
+            let users 
+            try {
+                if (req.params.name == "undefined") {
+                    users = await User.find({}, ["name", "id"])
+                } else {
+                    users = await User.find({ name: { $regex: req.params.name } }, ["name", "id"])    
+                }
+                res.status(200).json({ massage: "تم جلب المهام بنجاح", data: users });
+            } catch (error) {
+                res.status(500).json({ message: "Error fetching mangers", error });
+            }
+        }
 const login = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -105,6 +119,7 @@ const google = async (req, res) => {
 
 module.exports = {
     getAllUser,
+    searchInUser,
     getUserById,
     login,
     register,

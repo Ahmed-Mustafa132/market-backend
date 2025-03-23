@@ -1,10 +1,12 @@
-const express = require('express'); 
+const express = require('express');
 const router = express.Router();
-const {validateUserRegistration} = require('../middleware/authMiddleware');
-const { getAllUser, getUserById, login, register, google } = require('../controllers/userController');
+const { getAllUser, searchInUser, getUserById, login, register, google } = require('../controllers/userController');
+const { checkAuth } = require("../middleware/authMiddleware")
 router.get('/', getAllUser);
+router.get("/checkauth", checkAuth)
+router.get("/searsh/:name", searchInUser)
 router.get("/:id", getUserById);
 router.post('/login', login);
 router.post('/register', register);
-router.post("/google", google )
+router.post("/google", google);
 module.exports = router;

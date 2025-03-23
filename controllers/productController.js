@@ -4,7 +4,7 @@ const getProducts = async (req, res) => {
     try {
         const products = await Product.find()
         res.status(200).json({ message: 'Products fetched successfully', data: products })
-    } catch (error) {
+    } catch (error) {   
         res.status(500).json({ message: error.message })
     }
 }
@@ -18,28 +18,19 @@ const getProduct = async (req, res) => {
 }
 
 const createProduct = async (req, res) => {
-    console.log('Received file:', req.files ); // Log the received file
-    console.log('Received body:', req.body); // Log the received body
     const { title, description, price, market } = req.body;
     try {
-        console.log('Received file:', req.file); // Log the received file
-
         if (!req.file) {
             return res.status(400).json({ message: "ملف الصورة مطلوب" });
         }
-
         const productdata = {
             title,
             description,
             price,
             market,
         }
-
         // Log before upload attempt
-        console.log('Attempting to upload file to GCS');
         const imageUrl = await uploadToGCS(req.file);
-        console.log('Upload successful, URL:', imageUrl);
-
         productdata.image = imageUrl;
 
         const newProduct = new Product(productdata);

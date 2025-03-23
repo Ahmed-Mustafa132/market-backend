@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/multer');
-const { validateMarketRegistration } = require('../middleware/authMiddleware');
-const { getAllMarket,getMarketById, login, register } = require('../controllers/marketController');
+const { getAllMarket, searchInMarket, getMarketById, login, register, deleteMarket } = require('../controllers/marketController');
 
 const uploadFields = upload.fields([
     { name: 'BusinessRecords', maxCount: 1 },
@@ -10,8 +9,10 @@ const uploadFields = upload.fields([
 ]);
 
 router.get('/', getAllMarket);
+router.get("/searsh/:name", searchInMarket)
 router.get("/:id", getMarketById);
 router.post('/login', login);
-router.post('/register', uploadFields, validateMarketRegistration, register);
+router.post('/register', uploadFields, register);
+router.delete("/id",deleteMarket)
 
 module.exports = router;
