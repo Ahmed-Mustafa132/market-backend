@@ -23,7 +23,8 @@ const userRouter = require("./router/userRouter");
 const mangerRouter = require("./router/mangerRouter");
 const productRouter = require("./router/productRouter");
 const missionRouter = require("./router/missionRouter");
-const massageRouter = require("./router/massageRouter")
+const massageRouter = require("./router/massageRouter");
+const orderRouter = require("./router/orderRouter");
 
 
 // app.get("/", checkAuth)
@@ -35,6 +36,7 @@ app.use("/auth/manger", mangerRouter);
 app.use("/product", productRouter);
 app.use("/mission", missionRouter);
 app.use('/massage', massageRouter)
+app.use('/order', orderRouter)
 
 
 // MongoDB connection

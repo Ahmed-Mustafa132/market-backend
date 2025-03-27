@@ -191,16 +191,17 @@ const createMission = async (req, res) => {
         const missionData = {
             representative,
             market,
-            manger,
+            manger:req.user.id,
             products,
             complete:false,
         };
+        console.log(missionData)
         const newMission = new Mission(missionData);
         await newMission.save();
         res.status(201).json({message:"تم انشاء المهمة بنجاح"})
     } catch (error) {
         res.status(500).json({
-            massaeg: "حدث خطاء اثناء ارسال المهمة الرجاء التاكد من البيانات",
+            massaeg: "حدث خطاء اثناء ارسال المهمة الرجاء التاكد من  ",
         });
         console.log(error)
     }
@@ -213,11 +214,36 @@ const deleteMission = async (req,res)=>{
         res.status(500).json({massaeg:"حدث مشكلة اثناء الحذف "})
     }
 }
+const updateMissionStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { complete } = req.body;
+
+        const mission = await Mission.findByIdAndUpdate(
+            id,
+            { complete },
+            { new: true }
+        );
+
+        if (!mission) {
+            return res.status(404).json({ message: "المهمة غير موجودة" });
+        }
+
+        return res.status(200).json({
+            message: "تم تحديث حالة المهمة بنجاح",
+            data: mission
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "حدث خطأ في الخادم" });
+    }
+};
 module.exports = {
     getMissionForManger,
     getStateMissionForManger,
     getAllMissionsforRepAndMarket,
     getMissionById,
     createMission,
-    deleteMission
+    deleteMission,
+    updateMissionStatus
 };

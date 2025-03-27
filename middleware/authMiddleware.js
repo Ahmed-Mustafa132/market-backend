@@ -18,12 +18,27 @@ const checkAuth = async (req, res) => {
         return res.status(401).json({ massage: "جلسة غير صالحة" });
     }
 }
+const isManger = async (req, res, next) => {
+    const token = req.header('Authorization');
+    
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role == "manger" || decoded.role == "admin") {
+            req.user = decoded;
+            next();
+        }
+    } catch (error) {
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمدير " });
+    }
+}
 
 const isRep = async (req, res, next) => {
     
     const token = req.header('Authorization');
     if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
     try {
+
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
         if (decoded.role == "representative") {
             req.user = decoded;
@@ -35,6 +50,7 @@ const isRep = async (req, res, next) => {
 }
 const isMarket = async (req, res, next) => {
     const token = req.header('Authorization');
+    console.log(token)
     if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
     try {
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
@@ -76,4 +92,4 @@ const verifyMassage = async (req, res, next) => {
         return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او مدير " });
     }
 }
-module.exports = { isRep, checkAuth, isMarket,  verifyMassage, isMarketOrRep }
+module.exports = { isRep, checkAuth, isMarket, isManger,  verifyMassage, isMarketOrRep }
