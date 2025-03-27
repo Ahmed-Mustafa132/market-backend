@@ -12,9 +12,7 @@ const getAllManger = async (req, res) => {
     try {
         const mangers = await Manger.find({}, ["id", "name"]);
         for (const manger of mangers) {
-            console.log(manger)
             const Missions = await Mission.find({ manger: manger.id })
-            console.log(Missions)
             const newManger = {
                 id: manger.id,
                 name: manger.name,
@@ -42,7 +40,6 @@ const getMangerById = async (req, res) => {
 };
 const mangerDashboard = async (req, res) => {
     try {
-        // Initialize data object without the undefined variables
         let data = {
             dashboardStats: {}
         };
@@ -64,15 +61,10 @@ const mangerDashboard = async (req, res) => {
             totalRepresentatives: Representatives
         };
 
-        // Get top representatives
         const topRepresentatives = await Mission.aggregate([
-            // Group by representative
             { $group: { _id: "$representative", missionCount: { $sum: 1 } } },
-            // Sort in descending order
             { $sort: { missionCount: -1 } },
-            // Take top 5
             { $limit: 5 },
-            // Join with representatives collection
             {
                 $lookup: {
                     from: "representatives",
@@ -81,7 +73,6 @@ const mangerDashboard = async (req, res) => {
                     as: "repInfo"
                 }
             },
-            // Simplify the result
             {
                 $project: {
                     _id: 0,
@@ -91,7 +82,6 @@ const mangerDashboard = async (req, res) => {
             }
         ]);
 
-        // Get top markets
         const topMarkets = await Mission.aggregate([
             {
                 $group: {
@@ -124,7 +114,6 @@ const mangerDashboard = async (req, res) => {
             }
         ]);
 
-        // Add the aggregated data to the response
         data.topRepresentatives = topRepresentatives;
         data.topMarkets = topMarkets;
 
@@ -134,7 +123,6 @@ const mangerDashboard = async (req, res) => {
     }
 };
 const searchInManger = async (req, res) => {
-    console.log(req.params)
     let data = []
     let mangers
     try {
@@ -142,7 +130,6 @@ const searchInManger = async (req, res) => {
             mangers = await Manger.find({}, ["name", "id"])
         } else {
             mangers = await Manger.find({ name: { $regex: req.params.name } }, ["name", "id"])
-            console.log(mangers)
 
         }
         for (const manger of mangers) {

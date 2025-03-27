@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken")
 
-const checkAuth = async (req, res, next) => {
-    const token = req.header("Authorization");
+const checkAuth = async (req, res) => {
+    const token = req.header('Authorization');
     if (!token) {
         req.isAuthenticated = false;
         return res.status(401).json({ massage: "يرجي تسجيل الدخول" });
@@ -33,6 +33,36 @@ const isRep = async (req, res, next) => {
         return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب " });
     }
 }
+const isMarket = async (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role == "market") {
+            req.user = decoded;
+            next();
+        }
+    } catch (error) {
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمدير " });
+    }
+}
+const isMarketOrRep = async (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        console.log(decoded)
+        if (decoded.role == "market" || decoded.role == "representative") {
+            req.user = decoded;
+            console.log(`this is user${req.user}`)   
+            next();
+        }
+    } catch (error) {
+        console.log(error)
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او متجر " });
+    }
+}
+
 const verifyMassage = async (req, res, next) => {
     const token = req.header('Authorization');
     if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
@@ -46,4 +76,4 @@ const verifyMassage = async (req, res, next) => {
         return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او مدير " });
     }
 }
-module.exports = { isRep, checkAuth, verifyMassage }
+module.exports = { isRep, checkAuth, isMarket,  verifyMassage, isMarketOrRep }

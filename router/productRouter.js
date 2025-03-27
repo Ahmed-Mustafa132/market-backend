@@ -8,13 +8,16 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
+    getProductByMarket,
 } = require('../controllers/productController');
+const { isMarket } = require('../middleware/authMiddleware');
 
 
 
 router.get('/', getProducts);
+router.get('/market/prodact',isMarket, getProductByMarket);
 router.get('/:id', getProduct);
-router.post('/', upload.single('image'), createProduct);
+router.post('/', isMarket, upload.single('image'), createProduct);
 router.put('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 module.exports = router;

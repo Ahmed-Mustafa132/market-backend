@@ -14,12 +14,23 @@ const getAllUser = async (req, res) => {
 };
 const getUserById = async (req, res) => {
     try {
-        const user = await user.findById(req.params.id, "name");
-        res.status(200).json(user);
+        const user = await User.findById(req.params.id, ["name","email"]);
+        res.status(200).json({massage:"تم جلب البيانات " , data:user});
     } catch (error) {
         res.status(500).json({ message: 'Error fetching user', error });
     }
 };
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: "لا يوجد مستخدم  " });
+        }
+        res.status(200).json({ message: "Market deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting Market", error });
+    }
+}
 const searchInUser = async (req, res) => {
             console.log(req.params.name)
             let users 
@@ -33,7 +44,7 @@ const searchInUser = async (req, res) => {
             } catch (error) {
                 res.status(500).json({ message: "Error fetching mangers", error });
             }
-        }
+}
 const login = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -121,6 +132,7 @@ module.exports = {
     getAllUser,
     searchInUser,
     getUserById,
+    deleteUser,
     login,
     register,
     google

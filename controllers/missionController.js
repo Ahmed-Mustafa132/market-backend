@@ -4,17 +4,28 @@ const Manger = require("../model/mangerModel")
 const Representative = require("../model/representativeModel")
 const Product = require("../model/productModel")
 const jwt = require("jsonwebtoken");
-const getAllMissionsforRep = async (req, res) => {
-  
+const getAllMissionsforRepAndMarket = async (req, res) => {
+  console.log(req.user)
     const data = [];
     try {
         let missions
-        if (req.params.state == "true") {
-            missions = await Mission.find({ representative:req.user.id,complete: true });
+        if (req.user.role == "representative") {
+            if (req.params.state == "true") {
+                missions = await Mission.find({ representative:req.user.id,complete: true });
+            }
+            if (req.params.state == "false") {
+                missions = await Mission.find({ representative: req.user.id, complete: false })
+            }
         }
-        if (req.params.state == "false") {
-            missions = await Mission.find({ representative: req.user.id, complete: false })
+        if (req.user.role == "market") {
+            if (req.params.state == "true") {
+                missions = await Mission.find({ market: req.user.id, complete: true });
+            }
+            if (req.params.state == "false") {
+                missions = await Mission.find({ market: req.user.id, complete: false })
+            }
         }
+
         
         for (const mission of missions) {
             const products = []
@@ -42,7 +53,7 @@ const getAllMissionsforRep = async (req, res) => {
             data.push(newMission);
         }
 
-        res.status(200).json({ message: "تم جلب المهمات بنجاح", data });
+        res.status(200).json({ message: "تم جلب المهمات بنجاح", data:data });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "حدث خطأ أثناء جلب المهمات" });
@@ -89,20 +100,93 @@ const getMissionForManger = async (req, res) => {
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
+const getStateMissionForManger = async (req, res) => { const data = [];
+    try {
+        let missions
+        if (req.params.state == "true") {
+            missions = await Mission.find({complete: true });
+        }
+        if (req.params.state == "false") {
+            missions = await Mission.find({ complete: false })
+        }
+        if (!missions) {
+            return res.status(404).json({ message: "لا توجد مهام" });
+        }
+        for (const mission of missions) {
+            const products = []
+            const marketName = await Market.findById(mission.market, "name");
+            const mangerName = await Manger.findById(mission.manger, "name");
+            const representativeName = await Representative.findById(mission.representative, "name");
+            for (const product of mission.products) {
+
+                const productName = await Product.findById(product.product, ["_id", "title", "price"])
+                const newProduct = {
+                    product: productName,
+                    quantity: product.quantity
+                }
+                products.push(newProduct)
+            }
+
+            const newMission = {
+                id: mission.id,
+                market: marketName.name,
+                manger: mangerName.name,
+                representative: representativeName.name,
+                products: products,
+                complete: mission.complete
+            };
+
+            data.push(newMission);
+        }
+        
+        return res.status(200).json({ message: "تم جلب المهمات بنجاح", data: data });
+} catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "حدث خطأ في الخادم" });
+    }}
 const getMissionById = async (req, res) => {
+    const data = [];
     try {
         const mission = await Mission.findById(req.params.id);
         if (!mission) {
-            return res.status(404).json({ massage: "مهم غير موجودة" });
+            return res.status(404).json({ message: "لا توجد مهام" });
         }
-        res.status(200).json(mission);
+ 
+            const products = []
+            const marketName = await Market.findById(mission.market, "name");
+            const mangerName = await Manger.findById(mission.manger, "name");
+            const representativeName = await Representative.findById(mission.representative, "name");
+            for (const product of mission.products) {
+
+                const productName = await Product.findById(product.product, ["_id", "title", "price"])
+                const newProduct = {
+                    product: productName,
+                    quantity: product.quantity
+                }
+                products.push(newProduct)
+            }
+
+        const newMission = {
+            id: mission.id,
+            market: marketName.name,
+            manger: mangerName.name,
+            representative: representativeName.name,
+            products: products,
+            complete: mission.complete
+        }
+
+            data.push(newMission);
+        
+
+        return res.status(200).json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-        res.status(500).json({ massaeg: "خطاء في جلب المهمة" });
+        console.log(error)
+        return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
 const createMission = async (req, res) => {
     try {
-        const { representative, market, products, manger, complete } = req.body;
+        const { representative, market, products, manger } = req.body;
         
         const missionData = {
             representative,
@@ -130,8 +214,9 @@ const deleteMission = async (req,res)=>{
     }
 }
 module.exports = {
-    getAllMissionsforRep,
     getMissionForManger,
+    getStateMissionForManger,
+    getAllMissionsforRepAndMarket,
     getMissionById,
     createMission,
     deleteMission

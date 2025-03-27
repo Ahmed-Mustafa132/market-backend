@@ -100,7 +100,7 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = jwt.sign({ email: market.email, id: market._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: market.email, id: market._id ,role:market.role  }, process.env.JWT_SECRET, {
       expiresIn: "24h",
     });
     res.status(200).json({ token });
@@ -156,6 +156,7 @@ const register = async (req, res) => {
 
     res.status(201).json({ Market: newMarket, token });
   } catch (error) {
+    console.log(error);
     console.error("Error creating Market:", error);
     res
       .status(500)

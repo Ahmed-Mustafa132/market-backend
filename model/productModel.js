@@ -17,14 +17,24 @@ const productSchema = new mongoose.Schema({
         min: 0
     },
     image: {
-        type: String,
-        required: true,
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
     },
     market: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
+    rate: {
+        type: Number,
+        default: 0
+    }
 }, {
     timestamps: true
 });

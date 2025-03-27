@@ -60,8 +60,6 @@ const getRepresentativeById = async (req, res) => {
         if (!representative) {
             return res.status(404).json({ message: "Representative not found" });
         }
-        console.log(representative)
-
         // Generate fresh signed URLs for the identity documents
         const identityFrontSignedUrl = await generateSignedUrl(representative.identityFront.fileName);
         const identityBackSignedUrl = await generateSignedUrl(representative.identityBack.fileName);
@@ -106,6 +104,17 @@ const uploudLocation = async (req, res) => {
         res.status(500).json({ message: "Error updating location", error });
     }
 };
+const deleteRepresentative = async (req, res) => { 
+    try {
+        const representative = await Representative.findByIdAndDelete(req.params.id);
+        if (!representative) {
+            return res.status(404).json({ message: "لا يوجد مندوب  " });
+        }
+        res.status(200).json({ message: "Market deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting Market", error });
+    }
+}
 
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -194,6 +203,7 @@ module.exports = {
     getAllRepresentative,
     searchInRepresentative,
     getRepresentativeById,
+    deleteRepresentative,
     uploudLocation,
     login,
     register,

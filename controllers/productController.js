@@ -1,5 +1,5 @@
 const Product = require('../model/productModel')
-const { uploadToGCS } = require('../utils/fileUploader')
+const { uploadProductToGCS } = require('../utils/productUploader')
 const getProducts = async (req, res) => {
     try {
         const products = await Product.find()
@@ -11,28 +11,40 @@ const getProducts = async (req, res) => {
 const getProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id)
-        res.json(product)
+        res.status(200).json({ message: 'Product fetched successfully', data: product })
     } catch (error) {
         res.status(404).json({ message: error.message })
     }
 }
-
+const getProductByMarket = async (req, res) => {
+    try {
+        const product = await Product.find({ market: req.user.id })
+        console.log(product)
+        res.status(200).json({ message: 'Product fetched successfully', data: product })
+    } catch (error) {
+        console.log({ message: error.message })
+        res.status(404).json({ message: error.message })
+    }
+}
 const createProduct = async (req, res) => {
-    const { title, description, price, market } = req.body;
+    const { title, description, price } = req.body;
+    
     try {
         if (!req.file) {
             return res.status(400).json({ message: "ملف الصورة مطلوب" });
         }
+        const imageUrl = await uploadProductToGCS(req.file);
+        console.log('Image URL:', imageUrl);
         const productdata = {
-            title,
-            description,
-            price,
-            market,
+            title: title,
+            description: description,
+            price: price,
+            market: req.user.id,
+            image: {
+                url: imageUrl.publicUrl,
+                fileName: imageUrl.fileName
+            },
         }
-        // Log before upload attempt
-        const imageUrl = await uploadToGCS(req.file);
-        productdata.image = imageUrl;
-
         const newProduct = new Product(productdata);
         await newProduct.save();
 
@@ -77,7 +89,7 @@ const deleteProduct = async (req, res) => {
     module.exports = {
         getProducts,
         getProduct,
-
+        getProductByMarket,
         createProduct,
         updateProduct,
         deleteProduct,

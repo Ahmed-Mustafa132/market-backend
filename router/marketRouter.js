@@ -13,6 +13,6 @@ router.get("/searsh/:name", searchInMarket)
 router.get("/:id", getMarketById);
 router.post('/login', login);
 router.post('/register', uploadFields, register);
-router.delete("/id",deleteMarket)
+router.delete("/:id",deleteMarket)
 
 module.exports = router;
