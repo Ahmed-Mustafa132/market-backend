@@ -56,7 +56,7 @@ const login = async (req, res) => {
         if (!isPasswordCorrect) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
-        const token = jwt.sign({ email: user.email, id: user._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ email: user.email, id: user._id,role:user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.status(200).json({ user, token });
     } catch (error) {
         atus(500).json({ message: 'Something went wrong', error });
@@ -96,7 +96,8 @@ const google = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         
-        const payload = ticket.getPayload(); // معلومات المستخدم
+        const payload = ticket.getPayload();// معلومات المستخدم
+        console.log(payload);
         const { sub, email, name } = payload;
         
         let user = await User.findOne({ email });
@@ -104,19 +105,20 @@ const google = async (req, res) => {
         if (!user) {
             const randomPassword = Math.random().toString(36).slice(-10);
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
+            
             user = new User({
                 name,
                 email,
                 password: hashedPassword,
+                role:"user"
             });
-            
-            await user.save();
+            const res = await user.save();
+            user = await User.findOne({ email });
         }
         
         // إنشاء JWT خاص بالتطبيق
         const userToken = jwt.sign(
-            { userId: sub, email, name },
+            { id: user.id, email, name, role:user.role },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );

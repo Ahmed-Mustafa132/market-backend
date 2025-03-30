@@ -6,7 +6,7 @@ const Product = require("../model/productModel")
 const Representative = require("../model/representativeModel")
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+const {uploadToGCS, generateSignedUrl} = require("../utils/fileUploader");
 const getAllManger = async (req, res) => {
     let data = []
     try {
@@ -31,10 +31,29 @@ const getMangerById = async (req, res) => {
     try {
         const manger = await Manger.findById(req.params.id);
         if (!manger) {
-            return res.status(404).json({ message: "Manger not found" });
+            return res.status(404).json({ message: "Representative not found" });
         }
-        res.status(200).json(manger);
+        console.log(manger)
+        const identityFrontSignedUrl = await generateSignedUrl(manger.identityFront.fileName);
+        const identityBackSignedUrl = await generateSignedUrl(manger.identityBack.fileName);
+
+        // Generate fresh signed URLs for the identity documents
+
+        // Create a response object with signed URLs
+        const responseData = {
+            _id: manger._id,
+            name: manger.name,
+            email: manger.email,
+            phone: manger.phone,
+            identityFront: identityFrontSignedUrl,
+            identityBack: identityBackSignedUrl,
+            accounts: manger.accounts,
+
+        };
+
+        res.status(200).json({massage: "تم جلب المهام بنجاح", data: responseData});
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: "Error fetching Manger", error });
     }
 };
@@ -167,18 +186,83 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-    const { name, email, password } = req.body;
+    console.log(req.body)
+    console.log(req.files)  
     try {
-        const manger = await Manger.findOne({ email });
-        if (manger) {
-            return res.status(400).json({ message: "Manger already exists" });
-        }
+        const { name, email, password, phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newManger = new Manger({ name, email, password: hashedPassword });
+        const manger = await Manger.findOne({ email })
+        if(manger) {
+            return res.status(400).json({ message: "Email already exists" });
+        }
+        // Upload identity documents and get both public URLs and file names
+        const identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
+        const identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+
+        const mangerData = {
+            name,
+            email,
+            password: hashedPassword,
+            phone,
+            identityFront: {
+                url: identityFrontUpload.publicUrl,
+                fileName: identityFrontUpload.fileName
+            },
+            identityBack: {
+                url: identityBackUpload.publicUrl,
+                fileName: identityBackUpload.fileName
+            }
+        };
+
+        const newManger = new Manger(mangerData);
         await newManger.save();
-        res.status(201).json({ message: "Manger created successfully" });
+
+        const token = jwt.sign(
+            { email: newManger.email, id: newManger._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "24h" }
+        );
+
+        // Generate signed URLs for the response
+        const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
+        const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
+
+        // Create a response object with signed URLs
+        const responseData = {
+            _id: newManger._id,
+            name: newManger.name,
+            email: newManger.email,
+            phone: newManger.phone,
+            identityFront: identityFrontSignedUrl,
+            identityBack: identityBackSignedUrl,
+            token
+        };
+        res.status(201).json(responseData);
     } catch (error) {
-        res.status(500).json({ message: "Error creating Manger", error });
+        res.status(500).json({ message: "Something went wrong", error });
+        console.log(error);
+    }
+};
+const updateAccount = async (req, res) => {
+    const { id, account } = req.body
+    try {
+        const manger = await Manger.findById(id, ["accounts"]);
+        if (!manger) {
+            return res.status(404).json({ message: "Manger not found" });
+        }
+        const totalaccounts = +manger.accounts + +account
+
+        // Add await here to execute the query
+        const mangerData = await Manger.findOneAndUpdate(
+            { _id: id },
+            { accounts: totalaccounts },
+            { new: true }
+        );
+
+        res.status(200).json({ message: "Account updated successfully" });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Error updating account", error: error.message });
     }
 }
 module.exports = {
@@ -188,4 +272,5 @@ module.exports = {
     getMangerById,
     login,
     register,
+    updateAccount
 };

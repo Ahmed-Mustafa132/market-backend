@@ -1,51 +1,142 @@
-const Massage = require("../model/massageModel")
-const Manger = require('../model/mangerModel')
-const getMassage = async (req, res) => {
+const Message = require('../model/massageModel');
+const Manger = require('../model/mangerModel');
+
+// إنشاء رسالة جديدة
+const createMessagForMarket = async (req, res) => {
+    const { id, massage } = req.body;
     try {
-        let massages = []
-        const data = []
-        if (req.user.role == "representative") {
-            massages = await Massage.find({ to: req.user.id })
+        const massageData = {
+            from: req.user.id,
+            toModel: 'Market',
+            to: id,
+            content: massage,
         }
-        if(req.user.role == "manger"){
-            massages = await Massage.find({from: req.user.id})
-        }   
-        for (const massage of massages) {
-            const mangerName = await Manger.find(massage.from,"name")
-            const newMassage = {
-                id: massage.id,
-                manger: mangerName,
-                content: massage.content
+        const message = await Message.create(massageData);
+        res.status(201).json({
+            status: 'success',
+            data: message
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({
+            status: 'fail',
+            message: error.message
+        });
+    }
+};
+const createMessagForRep = async (req, res) => {
+    const { id, massage } = req.body;
+    try {
+        const massageData = {
+            from: req.user.id,
+            toModel: 'Representative',
+            to: id,
+            content: massage,
+        }
+        const message = await Message.create(massageData);
+        res.status(201).json({
+            status: 'success',
+            data: message
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({
+            status: 'fail',
+            message: error.message
+        });
+    }
+};
+// الحصول على جميع الرسائل لمستخدم معين
+const getUserMessages = async (req, res) => {
+    const data = []
+    try {
+        const massages = await Message.find({
+            to: req.user.id
+        },).sort({ timestamp: -1 });
+        for (massage of massages) {
+            const manger = await Manger.findById({ _id: massage.from }, "name")
+            const addData = {
+                massage: massage.content,
+                manger: manger
             }
-            data.push(newMassage)
+            data.push(addData)
         }
-        res.status(200).json({massage: "تم جلب الاشعارات بنجاح ", data: data})
+        console.log(massages)
+        res.status(200).json({
+            status: 'success',
+            data: data
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({
+            status: 'fail',
+            message: error.message
+        });
+    }
+};
+
+// تحديث حالة قراءة الرسالة
+markAsRead = async (req, res) => {
+    try {
+        const message = await Message.findByIdAndUpdate(
+            req.params.messageId,
+            { read: true },
+            { new: true }
+        );
+
+        res.status(200).json({
+            status: 'success',
+            data: message
+        });
     } catch (error) {
         res.status(400).json({
             status: 'fail',
             message: error.message
-        })
+        });
     }
-}
+};
 
-const createMassage = async (req, res) => {
-    const { from, to, content } = req.body
+// حذف رسالة
+deleteMessage = async (req, res) => {
     try {
-        const massageData = {
-            from,
-            to,
-            content
-        }
-        const newMassage = new Massage(massageData)
-        await newMassage.save()
-        res.status(200).json({massage: "تم ارسال الاشعار بنجاح"})
-    } catch (error) {
-        console.log(error)
+        await Message.findByIdAndDelete(req.params.messageId);
 
+        res.status(204).json({
+            status: 'success',
+            data: null
+        });
+    } catch (error) {
         res.status(400).json({
             status: 'fail',
-            message: "error.massage"
-        })
+            message: error.message
+        });
     }
-}
-module.exports = { getMassage, createMassage }
+};
+
+// الحصول على الرسائل غير المقروءة
+getUnreadMessages = async (req, res) => {
+    try {
+        const messages = await Message.find({
+            to: req.params.userId,
+            read: false
+        }).sort({ timestamp: -1 });
+
+        res.status(200).json({
+            status: 'success',
+            results: messages.length,
+            data: messages
+        });
+    } catch (error) {
+        res.status(400).json({
+            status: 'fail',
+            message: error.message
+        });
+    }
+};
+module.exports = {
+    createMessagForMarket,
+    createMessagForRep,
+    getUserMessages,
+    deleteMessage,
+    getUnreadMessages
+};

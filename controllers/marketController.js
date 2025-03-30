@@ -3,12 +3,60 @@ const Mission = require("../model/missionModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const marketDashboard = async (req, res) => { 
+  // let data = {
+  //   dashboardStats: {}
+  // }
+  // try {
+  //   const missions = await Mission.countDocuments({ market: req.user.id });
+  //   const Products = await Product.countDocuments({market: req.user.id});
+  // }
 
+}
+const updataAccount = async (req, res) => {
+    const { id, account } = req.body
+    try {
+      const market = await Market.findById(id, ["accounts"]);
+      if (!market) {
+            return res.status(404).json({ message: "Representative not found" });
+        }
+      const totalaccounts = +market.accounts + +account
+
+        // Add await here to execute the query
+      const data = await Market.findOneAndUpdate(
+            { _id: id },
+            { accounts: totalaccounts },
+            { new: true }
+        );
+
+        // Convert to plain object or select specific fields
+      const Data = data.toObject ? data.toObject() : {
+        _id: data._id,
+        name: data.name,
+        accounts: data.accounts
+            // Add other fields you need
+        };
+
+      res.status(200).json({ message: "Account updated successfully", data: Data });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Error updating account", error: error.message });
+    }
+}
 const getAllMarket = async (req, res) => {
   let data = []
   let totleSales = 0
   try {
-    const Markets = await Market.find({}, ["id", "name"]);
+
+    let Markets = ""
+    console.log(req.params.state)
+    if (req.params.state == "true") {
+      Markets = await Market.find({ approved: 'true' }, ["id", "name"])
+      console.log(Markets)
+    } else {
+      Markets = await Market.find({ approved: false },["id", "name"])
+    }
+    console.log(Markets)
     for (const market of Markets) {
       const missions = await Mission.find({ market: market.id })
       for (const mission of missions) {
@@ -27,6 +75,7 @@ const getAllMarket = async (req, res) => {
     }
     res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: data });
   } catch (error) {
+    console.log(error)
     console.log(error)
     res.status(500).json({ message: "Error fetching Markets", error:error });
   }
@@ -49,6 +98,7 @@ const getMarketById = async (req, res) => {
       phone: market.phone,
       BusinessRecords: BusinessRecordsSignedUrl,
       taxID: taxIDSignedUrl,
+      accounts: market.accounts,
       createdAt: market.createdAt,
       updatedAt: market.updatedAt,
     };
@@ -134,6 +184,7 @@ const register = async (req, res) => {
       password: hashedPassword,
       role,
       phone,
+      approved: false,
       taxID: {
         url: taxIdUpload.publicUrl,
         fileName: taxIdUpload.fileName,
@@ -174,12 +225,27 @@ const deleteMarket = async (req, res) => {
     res.status(500).json({ message: "Error deleting Market", error });
   }
 };
-
+const approveData = async (req, res) => {
+  try {
+    const market = await Market.findByIdAndUpdate(req.params.id, {
+      approved: true,
+    });
+    if (!market) {
+      return res.status(404).json({ message: "Market not found" });
+    }
+    market.approved = true;
+    await market.save();
+    res.status(200).json({ message: "Market approved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error approving Market", error });
+  }
+};
 module.exports = {
+  marketDashboard,
   getAllMarket,
   searchInMarket,
   getMarketById,
   login,
   register,
-  deleteMarket
+  deleteMarket, updataAccount, approveData
 };

@@ -33,6 +33,35 @@ const mangerSchema = new mongoose.Schema({
         required: true,
         enum: ['manger', 'admin'],
         default: 'manger'
+    },
+    phone: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    identityFront: {
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
+    },
+    identityBack: {
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        }
+    },
+    accounts: {
+        type: String,
+        default: "0"
     }
 }, {
     timestamps: true

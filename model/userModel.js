@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Password must be between 7 and 64 characters'
         }
+    },
+    role: {
+        type: String,
+        reequired: true,
+        default: 'user'
     }
 }, {
     timestamps: true,

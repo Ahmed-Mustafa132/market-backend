@@ -65,6 +65,14 @@ const marketSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ['market']
+    },
+    accounts: {
+        type: String,
+        default: "0"
+    },
+    approved: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

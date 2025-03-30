@@ -1,20 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { createOrder, getAllOrders, updateOrderStatus, getOrderById, deleteOrder } = require('../controllers/orderControllers');
+const {
+  createOrder,
+    getAllOrdersForRep,
+    getOrderSearch,
+  getOrderById,
+  deleteOrder,
+  getOrderByState, approveOrder
+} = require("../controllers/orderControllers");
+const { isRepOrUserOrManger, isRep, isAuth, isManger} = require("../middleware/authMiddleware");
 
-// إنشاء طلب جديد
-router.post('/', createOrder);
-
-// الحصول على جميع الطلبات
-router.get('/', getAllOrders);
-
-// الحصول على طلب بواسطة المعرف
-router.get('/:id', getOrderById);
-
-// تحديث حالة الطلب
-router.patch('/:id/status', updateOrderStatus);
-
-// حذف طلب
-router.delete('/:id', deleteOrder);
+router.post("/",isRepOrUserOrManger, createOrder);
+router.get("/", isAuth, getAllOrdersForRep);
+router.get("/state/:state", isManger, getOrderByState);
+router.put("/approve/:id",isManger,approveOrder);
+router.get("/search/:search", isAuth, getOrderSearch);
+router.get("/:id", isAuth, getOrderById);
+router.delete("/:id", deleteOrder);
 
 module.exports = router;

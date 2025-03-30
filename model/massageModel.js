@@ -8,7 +8,8 @@ const massageSchema = new mongoose.Schema({
     },
     fromModel: {
         type: String,
-        enum: ['User', 'Manager', 'Representative', 'Market']
+        enum: ['Manager'],
+        default: 'Manager'
     },
     to: {
         type: mongoose.Schema.Types.ObjectId,
@@ -17,7 +18,7 @@ const massageSchema = new mongoose.Schema({
     },
     toModel: {
         type: String,
-        enum: ['User', 'Manager', 'Representative', 'Market']
+        enum: ['Manager', 'Representative', 'Market']
     },
     content: {
         type: String,

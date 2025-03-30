@@ -2,38 +2,26 @@
 const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
-    customer: {
-        name: {
-            type: String,
-            required: true
-        },
-        phone: {
-            type: String,
-            required: true
-        },
-        address: {
-            type: String,
-            required: true
-        },
-    },
-
-    products: [
-        {
-            product: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Product",
-                required: true,
-            },
-            quantity: { type: Number, required: true, min: 1 },
-            price: { type: Number, required: true },
-        },
-    ],
-    totalAmount: { type: Number, required: true },
-    status: {
+    client: {
         type: String,
-        enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
-        default: "pending",
+        required: true,
+
     },
+    phone: {
+        type: String,
+        required: true,
+    },
+    address: {
+        type: String,
+        required: true,
+    },
+    product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+    },
+    quantity: { type: Number, required: true, min: 1 },
+    totalAmount: { type: Number, required: true },
     market: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Market",
@@ -42,7 +30,9 @@ const orderSchema = new mongoose.Schema({
     representative: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Representative",
+
     },
+    approved: { type: Boolean, default: false },
     notes: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

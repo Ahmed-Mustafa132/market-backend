@@ -1,17 +1,26 @@
+const e = require('express')
 const Product = require('../model/productModel')
+const Market = require('../model/marketModel')
 const { uploadProductToGCS } = require('../utils/productUploader')
 const getProducts = async (req, res) => {
     try {
         const products = await Product.find()
         res.status(200).json({ message: 'Products fetched successfully', data: products })
-    } catch (error) {   
+    } catch (error) {
         res.status(500).json({ message: error.message })
     }
 }
 const getProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id)
-        res.status(200).json({ message: 'Product fetched successfully', data: product })
+        const product = await Product.findById(req.params.id,["title", "description", "price", "image", "market","rate"])
+        const market = await Market.findById(product.market, "name")
+
+
+        const data = {
+            ...product._doc,
+            market: market.name
+        }
+        res.status(200).json({ message: 'Product fetched successfully', data: data })
     } catch (error) {
         res.status(404).json({ message: error.message })
     }
@@ -28,7 +37,7 @@ const getProductByMarket = async (req, res) => {
 }
 const createProduct = async (req, res) => {
     const { title, description, price } = req.body;
-    
+
     try {
         if (!req.file) {
             return res.status(400).json({ message: "ملف الصورة مطلوب" });
@@ -74,24 +83,39 @@ const updateProduct = async (req, res) => {
         }
         const updatedProduct = await product.save()
         res.json(updatedProduct)
-    } catch(error) {
-            res.status(400).json({ message: error.message })
-        }
+    } catch (error) {
+        res.status(400).json({ message: error.message })
     }
+}
 const deleteProduct = async (req, res) => {
-        try {
-            await Product.findByIdAndDelete(req.params.id)
-            res.json({ message: 'Product deleted' })
-        } catch (error) {
-            res.status(500).json({ message: error.message })
+    try {
+        await Product.findByIdAndDelete(req.params.id)
+        res.json({ message: 'Product deleted' })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+const searchProduct = async (req, res) => {
+    console.log(req.params.search)
+    try {
+        let products = []
+        const search = req.params.search;
+        if (search === "undefined") {
+             products = await Product.find({})
+        }else{
+             products = await Product.find({ title: { $regex: search, $options: 'i' } });
         }
+        res.status(200).json({ message: 'Products fetched successfully', data: products });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    module.exports = {
-        getProducts,
-        getProduct,
-        getProductByMarket,
-        createProduct,
-        updateProduct,
-        deleteProduct,
-    }
+}
+module.exports = {
+    getProducts,
+    getProduct,
+    getProductByMarket,
+    createProduct,
+    updateProduct,
+    deleteProduct, searchProduct
+}
 

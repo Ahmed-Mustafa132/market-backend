@@ -8,14 +8,15 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
-    getProductByMarket,
+    getProductByMarket, searchProduct
 } = require('../controllers/productController');
 const { isMarket } = require('../middleware/authMiddleware');
 
 
 
 router.get('/', getProducts);
-router.get('/market/prodact',isMarket, getProductByMarket);
+router.get('/market/prodact', isMarket, getProductByMarket);
+router.get('/search/:search', searchProduct);
 router.get('/:id', getProduct);
 router.post('/', isMarket, upload.single('image'), createProduct);
 router.put('/:id', updateProduct);

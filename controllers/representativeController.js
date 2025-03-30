@@ -2,11 +2,85 @@ const Representative = require("../model/representativeModel");
 const Mission = require("../model/missionModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const repDashboard = async (req, res) => {
+    let data = {
+        dashboardStats: {},
+        topMarkets: []
+    }
+    try {
+        const missions = await Mission.find({ representative: req.user.id });
+        const missionComplete = await Mission.countDocuments({ complete: true, representative: req.user.id });
+        const missionUnComplete = await Mission.countDocuments({ complete: false, representative: req.user.id });
+
+        const topMarkets = await Mission.aggregate([
+            {
+                $match: {
+                    representative: req.user.id
+                }
+            },
+            {
+                $group: {
+                    _id: "$market",
+                    totalMissions: { $sum: 1 },
+                    completedMissions: {
+                        $sum: { $cond: [{ $eq: ["$complete", true] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: "markets",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "marketDetails"
+                }
+            },
+            { $unwind: "$marketDetails" },
+            {
+                $project: {
+                    marketName: "$marketDetails.name",
+                    marketId: "$_id",
+                    totalMissions: 1,
+                    completedMissions: 1,
+                    completionRate: {
+                        $multiply: [
+                            { $divide: ["$completedMissions", "$totalMissions"] },
+                            100
+                        ]
+                    }
+                }
+            },
+            { $sort: { totalMissions: -1 } }
+        ]);
+
+        data.dashboardStats = {
+            totalMissions: missions.length,
+            completedMissions: missionComplete,
+            pendingMissions: missionUnComplete
+        };
+        data.topMarkets = topMarkets;
+
+        res.status(200).json({ message: "تم جلب البيانات بنجاح", data });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "حدث خطأ في جلب البيانات", error: error });
+    }
+}
+
+
 const getAllRepresentative = async (req, res) => {
     let data = []
     try {
-        const representatives = await Representative.find({}, ["name", "id"]);
+        let representatives = ""
+        if (req.params.state == "true") {
+             representatives = await Representative.find({approved:true}, ["name", "id"]);
+        }
+        if (req.params.state == "false") {
+             representatives = await Representative.find({approved:false}, ["name", "id"]);
+        }
+
         for (const rep of representatives) {
         
             const missionComplet = await Mission.countDocuments({ complete: true, representative: rep.id });
@@ -73,6 +147,7 @@ const getRepresentativeById = async (req, res) => {
             identityFront: identityFrontSignedUrl,
             identityBack: identityBackSignedUrl,
             location: representative.location,
+            accounts: representative.accounts,
             createdAt: representative.createdAt,
             updatedAt: representative.updatedAt
 
@@ -115,6 +190,36 @@ const deleteRepresentative = async (req, res) => {
         res.status(500).json({ message: "Error deleting Market", error });
     }
 }
+const updataAccount = async (req, res) => {
+    const { id, account } = req.body
+    try {
+        const representative = await Representative.findById(id, ["accounts"]);
+        if (!representative) {
+            return res.status(404).json({ message: "Representative not found" });
+        }
+        const totalaccounts = +representative.accounts + +account
+
+        // Add await here to execute the query
+        const rep = await Representative.findOneAndUpdate(
+            { _id: id },
+            { accounts: totalaccounts },
+            { new: true }
+        );
+
+        // Convert to plain object or select specific fields
+        const repData = rep.toObject ? rep.toObject() : {
+            _id: rep._id,
+            name: rep.name,
+            accounts: rep.accounts
+            // Add other fields you need
+        };
+
+        res.status(200).json({ message: "Account updated successfully", data: repData });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Error updating account", error: error.message });
+    }
+}
 
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -144,8 +249,9 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
+    console.log(req.body)
     try {
-        const { name, email, password, role, phone } = req.body;
+        const { name, email, password,  phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Upload identity documents and get both public URLs and file names
@@ -156,7 +262,8 @@ const register = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role,
+            role: "representative",
+            approved: false,
             phone,
             identityFront: {
                 url: identityFrontUpload.publicUrl,
@@ -198,13 +305,30 @@ const register = async (req, res) => {
         console.log(error);
     }
 };
+const approveData = async (req, res) => {
+  try {
+    const rep = await Representative.findByIdAndUpdate(req.params.id, {
+      approved: true,
+    });
+    if (!rep) {
+        return res.status(404).json({ message: "Representative not found" });
+    }
+    rep.approved = true;
+      await rep.save();
+      res.status(200).json({ message: "Representative approved successfully" });
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Representative approving Market", error });
+  }
+};
 
 module.exports = {
+    repDashboard,
     getAllRepresentative,
     searchInRepresentative,
     getRepresentativeById,
     deleteRepresentative,
-    uploudLocation,
+    uploudLocation, updataAccount,
     login,
-    register,
+    register, approveData
 };

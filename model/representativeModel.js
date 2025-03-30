@@ -67,7 +67,6 @@ const representativeSchema = new mongoose.Schema({
         default:"representative"
     },
     location: {
-
         longitude: {
             type: Number,
             default: 0
@@ -76,7 +75,14 @@ const representativeSchema = new mongoose.Schema({
             type: Number,
             default: 0
         }
-
+    },
+    accounts: {
+        type: String,
+        default: "0"
+    },
+    approved: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
