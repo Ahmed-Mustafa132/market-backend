@@ -37,6 +37,7 @@ const isManger = async (req, res, next) => {
     if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
     try {
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    console.log(decoded)
         if (decoded.role == "manger" || decoded.role == "admin") {
             req.user = decoded;
             next();
