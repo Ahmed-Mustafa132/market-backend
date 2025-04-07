@@ -1,5 +1,18 @@
 const jwt = require("jsonwebtoken")
 
+const isUser = async (req, res, next) => { 
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
+    try {
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role == "user") {
+            req.user = decoded;
+            next();
+        }
+    } catch (error) {
+        return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمستخدم " });
+    }
+}
 const checkAuth = async (req, res) => {
     const token = req.header('Authorization');
     if (!token) {
@@ -118,4 +131,4 @@ const verifyMassage = async (req, res, next) => {
         return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او مدير " });
     }
 }
-module.exports = { isAuth, isRep, checkAuth, isMarket, isManger, isRepOrUserOrManger,  verifyMassage, isMarketOrRep }
+module.exports = { isUser, isAuth, isRep, checkAuth, isMarket, isManger, isRepOrUserOrManger,  verifyMassage, isMarketOrRep }

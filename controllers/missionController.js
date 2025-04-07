@@ -238,6 +238,85 @@ const updateMissionStatus = async (req, res) => {
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
+const searchMissionByStateAndName = async (req, res) => { 
+    const { search } = req.query
+    const { state } = req.params;
+    console.log(search)
+    console.log(state)
+    const data = [];
+    try {
+
+        let missions;
+        // Convert state string to boolean
+        const completeState = state === "true";
+
+        // Find missions by state and search in market or manager names
+        if (req.user.role == "representative") {
+            const markets = await Market.find({ name: { $regex: search, $options: 'i' } });
+            const marketIds = markets.map(market => market._id);
+
+            const mangers = await Manger.find({ name: { $regex: search, $options: 'i' } });
+            const mangerIds = mangers.map(manger => manger._id);
+
+            // Find missions that match the search criteria
+            missions = await Mission.find({
+                complete: completeState,
+                representative: req.user.id,
+                $or: [
+                    { market: { $in: marketIds } },
+                    { manger: { $in: mangerIds } }
+                ]
+            });
+        } else if (req.user.role == "market") { 
+            const reps = await Representative.find({ name: { $regex: search, $options: 'i' } });
+            const repIds = reps.map(rep => rep._id);
+
+            const mangers = await Manger.find({ name: { $regex: search, $options: 'i' } });
+            const mangerIds = mangers.map(manger => manger._id);
+
+            missions = await Mission.find({
+                complete: completeState,
+                market: req.user.id,
+                $or: [
+                    { representative: { $in: repIds } },
+                    { manger: { $in: mangerIds } }
+                ]
+            });
+        }
+        // Format the response data
+        for (const mission of missions) {
+            const products = [];
+            const marketName = await Market.findById(mission.market, "name");
+            const mangerName = await Manger.findById(mission.manger, "name");
+            const representativeName = await Representative.findById(mission.representative, "name");
+
+            for (const product of mission.products) {
+                const productName = await Product.findById(product.product, ["_id", "title", "price"]);
+                const newProduct = {
+                    product: productName,
+                    quantity: product.quantity
+                };
+                products.push(newProduct);
+            }
+
+            const newMission = {
+                id: mission.id,
+                market: marketName.name,
+                manger: mangerName.name,
+                representative: representativeName.name,
+                products: products,
+                complete: mission.complete
+            };
+
+            data.push(newMission);
+        }
+
+        res.status(200).json({ message: "تم جلب المهمات بنجاح", data: data });
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "حدث خطأ في الخادم" });
+    }
+}
 module.exports = {
     getMissionForManger,
     getStateMissionForManger,
@@ -245,5 +324,6 @@ module.exports = {
     getMissionById,
     createMission,
     deleteMission,
-    updateMissionStatus
+    updateMissionStatus, searchMissionByStateAndName
+
 };

@@ -1,67 +1,26 @@
 const Representative = require("../model/representativeModel");
 const Mission = require("../model/missionModel");
 const bcrypt = require("bcrypt");
+const Order = require("../model/orderModel");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
 const repDashboard = async (req, res) => {
     let data = {
-        dashboardStats: {},
-        topMarkets: []
     }
     try {
         const missions = await Mission.find({ representative: req.user.id });
         const missionComplete = await Mission.countDocuments({ complete: true, representative: req.user.id });
         const missionUnComplete = await Mission.countDocuments({ complete: false, representative: req.user.id });
-
-        const topMarkets = await Mission.aggregate([
-            {
-                $match: {
-                    representative: req.user.id
-                }
-            },
-            {
-                $group: {
-                    _id: "$market",
-                    totalMissions: { $sum: 1 },
-                    completedMissions: {
-                        $sum: { $cond: [{ $eq: ["$complete", true] }, 1, 0] }
-                    }
-                }
-            },
-            {
-                $lookup: {
-                    from: "markets",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "marketDetails"
-                }
-            },
-            { $unwind: "$marketDetails" },
-            {
-                $project: {
-                    marketName: "$marketDetails.name",
-                    marketId: "$_id",
-                    totalMissions: 1,
-                    completedMissions: 1,
-                    completionRate: {
-                        $multiply: [
-                            { $divide: ["$completedMissions", "$totalMissions"] },
-                            100
-                        ]
-                    }
-                }
-            },
-            { $sort: { totalMissions: -1 } }
-        ]);
-
-        data.dashboardStats = {
+        const orders = await Order.countDocuments({ representative: req.user.id });
+        const representative = await Representative.findById(req.user.id);
+        data = {
             totalMissions: missions.length,
             completedMissions: missionComplete,
-            pendingMissions: missionUnComplete
+            pendingMissions: missionUnComplete,
+            orders: orders,
+            accounts: representative.accounts,
         };
-        data.topMarkets = topMarkets;
-
         res.status(200).json({ message: "تم جلب البيانات بنجاح", data });
     } catch (error) {
         console.log(error);

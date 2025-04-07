@@ -110,12 +110,42 @@ const searchProduct = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
+const review = async (req, res) => {
+    const { rating } = req.body;
+    if (req.user.role !== "user") return  res.status(403).json({ message: "ليس لديك صلاحية لتقييم هذا المنتج" });
+    const product = await Product.findById(req.params.id);
+
+    if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
+    const alreadyReviewed = product.reviews.find(
+        (rev) => rev.userId.toString() === req.user.id.toString()
+    );
+    
+    if (alreadyReviewed) {
+        return res.status(400).json({ message: "أنت بالفعل قمت بتقييم هذا المنتج" });
+    }
+    try {
+        
+        product.reviews.push({
+            userId: req.user.id,
+            rating,
+        });
+        
+        product.averageRating =
+        product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length;
+        
+        await product.save();
+        
+        res.status(201).json({ message: "تم التقييم بنجاح" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
 module.exports = {
     getProducts,
     getProduct,
     getProductByMarket,
     createProduct,
     updateProduct,
-    deleteProduct, searchProduct
+    deleteProduct, searchProduct, review
 }
 

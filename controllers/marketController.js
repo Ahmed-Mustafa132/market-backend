@@ -1,16 +1,30 @@
 const Market = require("../model/marketModel");
 const Mission = require("../model/missionModel");
+const Order = require("../model/orderModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
 const marketDashboard = async (req, res) => { 
-  // let data = {
-  //   dashboardStats: {}
-  // }
-  // try {
-  //   const missions = await Mission.countDocuments({ market: req.user.id });
-  //   const Products = await Product.countDocuments({market: req.user.id});
-  // }
+  let data = {
+  }
+  try {
+    const missions = await Mission.countDocuments({ market: req.user.id });
+    const missionComplete = await Mission.countDocuments({ complete: true, market: req.user.id });
+    const missionUnComplete = await Mission.countDocuments({ complete: false, market: req.user.id });
+    const orders = await Order.countDocuments({ market: req.user.id });
+    const market = await Market.findById(req.user.id);
+    data = {
+      totalMissions: missions,
+      completedMissions: missionComplete,
+      pendingMissions: missionUnComplete,
+      orders: orders,
+      accounts: market.accounts,
+    };
+    res.status(200).json({ message: "تم جلب البيانات بنجاح", data });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "حدث خطأ في جلب البيانات", error: error });
+  }
 
 }
 const updataAccount = async (req, res) => {

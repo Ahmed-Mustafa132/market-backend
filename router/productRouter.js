@@ -8,9 +8,9 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
-    getProductByMarket, searchProduct
+    getProductByMarket, searchProduct, review
 } = require('../controllers/productController');
-const { isMarket } = require('../middleware/authMiddleware');
+const { isMarket, isUser } = require('../middleware/authMiddleware');
 
 
 
@@ -18,6 +18,7 @@ router.get('/', getProducts);
 router.get('/market/prodact', isMarket, getProductByMarket);
 router.get('/search/:search', searchProduct);
 router.get('/:id', getProduct);
+router.post('/:id/review',isUser,review)
 router.post('/', isMarket, upload.single('image'), createProduct);
 router.put('/:id', updateProduct);
 router.delete('/:id', deleteProduct);

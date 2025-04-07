@@ -20,7 +20,6 @@ const createOrder = async (req, res) => {
         if (req.user.role == "user") {
             const user = await User.findById(req.user.id, ["name"]);
             custmer = user.name;
-
         }
         const { productId, note, phone, address, quantity, } = req.body;
         const product = await Product.findById(productId, ["market", "price", "title"]);
