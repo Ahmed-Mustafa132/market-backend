@@ -37,7 +37,6 @@ const getMangerById = async (req, res) => {
         const identityFrontSignedUrl = await generateSignedUrl(manger.identityFront.fileName);
         const identityBackSignedUrl = await generateSignedUrl(manger.identityBack.fileName);
 
-        // Generate fresh signed URLs for the identity documents
 
         // Create a response object with signed URLs
         const responseData = {
@@ -265,6 +264,19 @@ const updateAccount = async (req, res) => {
         res.status(500).json({ message: "Error updating account", error: error.message });
     }
 }
+const deleteManger = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const manger = await Manger.findById(id);
+        if (!manger) {
+            return res.status(404).json({ message: "Manger not found" });
+        }
+        await manger.deleteOne();
+        res.status(200).json({ message: "Manger deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting manger", error });
+    }
+};
 module.exports = {
     getAllManger,
     mangerDashboard,
@@ -272,5 +284,6 @@ module.exports = {
     getMangerById,
     login,
     register,
-    updateAccount
+    updateAccount, deleteManger
+
 };

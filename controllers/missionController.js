@@ -241,8 +241,9 @@ const updateMissionStatus = async (req, res) => {
 const searchMissionByStateAndName = async (req, res) => { 
     const { search } = req.query
     const { state } = req.params;
-    console.log(search)
-    console.log(state)
+    console.log(req.user)
+    console.log( search) 
+    console.log(state)  
     const data = [];
     try {
 
@@ -267,9 +268,10 @@ const searchMissionByStateAndName = async (req, res) => {
                     { manger: { $in: mangerIds } }
                 ]
             });
-        } else if (req.user.role == "market") { 
+        } else if (req.user.role == "market" || req.user.role == "manger" || req.user.role == "admin" ) { 
             const reps = await Representative.find({ name: { $regex: search, $options: 'i' } });
             const repIds = reps.map(rep => rep._id);
+            console.log(repIds)
 
             const mangers = await Manger.find({ name: { $regex: search, $options: 'i' } });
             const mangerIds = mangers.map(manger => manger._id);
@@ -311,7 +313,7 @@ const searchMissionByStateAndName = async (req, res) => {
             data.push(newMission);
         }
 
-        res.status(200).json({ message: "تم جلب المهمات بنجاح", data: data });
+      return res.status(200).json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
