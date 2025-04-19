@@ -5,7 +5,6 @@ const Representative = require("../model/representativeModel")
 const Product = require("../model/productModel")
 const jwt = require("jsonwebtoken");
 const getAllMissionsforRepAndMarket = async (req, res) => {
-  console.log(req.user)
     const data = [];
     try {
         let missions
@@ -62,8 +61,14 @@ const getAllMissionsforRepAndMarket = async (req, res) => {
 }
 const getMissionForManger = async (req, res) => {
     const data = [];
+    let missions
     try {
-        const missions = await Mission.find({});
+        if (req.user.role == "admin") {   
+            const missions = await Mission.find({});
+        }
+        if (req.user.role == "manger") {
+            missions = await Mission.find({ manger: req.user.id });
+        }
         if (!missions) {
             return res.status(404).json({ message: "لا توجد مهام" });
         }
@@ -241,9 +246,6 @@ const updateMissionStatus = async (req, res) => {
 const searchMissionByStateAndName = async (req, res) => { 
     const { search } = req.query
     const { state } = req.params;
-    console.log(req.user)
-    console.log( search) 
-    console.log(state)  
     const data = [];
     try {
 

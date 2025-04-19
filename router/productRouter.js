@@ -8,19 +8,20 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
-    getProductByMarket, searchProduct, review
+    getProductByMarket, searchProduct, review, approvedData
 } = require('../controllers/productController');
 const { isMarket, isUser } = require('../middleware/authMiddleware');
 
 
 
-router.get('/', getProducts);
+router.get('/approved/:state', getProducts);
+router.patch('/approvedData/:id', approvedData);
 router.get('/market/prodact', isMarket, getProductByMarket);
 router.get('/search/:search', searchProduct);
 router.get('/:id', getProduct);
 router.post('/:id/review',isUser,review)
 router.post('/', isMarket, upload.single('image'), createProduct);
-router.put('/:id', updateProduct);
+router.patch('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 module.exports = router;
 

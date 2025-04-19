@@ -5,7 +5,6 @@ const reviewSchema = new mongoose.Schema({
     comment: String,
     createdAt: { type: Date, default: Date.now }
 });
-
 const productSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -38,8 +37,11 @@ const productSchema = new mongoose.Schema({
         required: true
     },
     reviews: [reviewSchema],
-    averageRating: { type: Number, default: 0 }
-
+    averageRating: { type: Number, default: 0 },
+    approved: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });
