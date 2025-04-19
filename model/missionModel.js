@@ -30,7 +30,11 @@ const missionSchema = new mongoose.Schema({
   ],
   complete: {
     type: Boolean,
-    required: true
+    required: true,
+  },
+  approved: {
+    type: Boolean,
+    default: true,
   }
 }, {
   timestamps:true
