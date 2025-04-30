@@ -1,13 +1,14 @@
 const Message = require('../model/massageModel');
 const Manger = require('../model/mangerModel');
-
+const Market = require('../model/marketModel');
+const Representative = require('../model/representativeModel');
 // إنشاء رسالة جديدة
 const createMessagForMarket = async (req, res) => {
     const { id, massage } = req.body;
     try {
         const massageData = {
             from: req.user.id,
-            toModel: 'Market',
+            toModel: 'market',
             to: id,
             content: massage,
         }
@@ -29,7 +30,7 @@ const createMessagForRep = async (req, res) => {
     try {
         const massageData = {
             from: req.user.id,
-            toModel: 'Representative',
+            toModel: 'representative',
             to: id,
             content: massage,
         }
@@ -61,7 +62,6 @@ const getUserMessages = async (req, res) => {
             }
             data.push(addData)
         }
-        console.log(massages)
         res.status(200).json({
             status: 'success',
             data: data
@@ -74,28 +74,62 @@ const getUserMessages = async (req, res) => {
         });
     }
 };
-
-// تحديث حالة قراءة الرسالة
-markAsRead = async (req, res) => {
+// الرد  علي الرسائل من المندوب و المتجر
+const createMessagForManger = async (req, res) => {
+    const { managerId, massage } = req.body;
     try {
-        const message = await Message.findByIdAndUpdate(
-            req.params.messageId,
-            { read: true },
-            { new: true }
-        );
-
-        res.status(200).json({
+        const massageData = {
+            from: req.user.id,
+            fromModel: req.user.role,
+            toModel: "manager",
+            to: managerId,
+            content: massage,
+        }
+        const message = await Message.create(massageData);
+        res.status(201).json({
             status: 'success',
             data: message
         });
     } catch (error) {
+        console.log(error)
         res.status(400).json({
             status: 'fail',
             message: error.message
         });
     }
 };
+const getMassageForManger = async (req, res) => {
+    const data = []
+    let from = ""
+    try {
+        const massages = await Message.find({ to: req.user.id })
+        for (const massage of massages) {
+            if (massage.fromModel === "market") {
+                from = await Market.findById(massage.from, "name")
 
+            }
+            if (massage.fromModel === "representative") {
+                from = await Representative.findById(massage.from, "name")
+            }
+            console.log(from)
+            const addData = {
+                id: massage._id,
+                massage: massage.content,
+                fromID: massage.from,
+                from: from.name,
+                fromModel: massage.fromModel,
+            }
+            data.unshift(addData)
+        }
+        res.status(200).json({ status: 200, data: data })
+    }
+    catch (error) {
+        console.log(error)
+        res.status(400).json({
+            status: "fail", message: error.message
+        })
+    }
+}
 // حذف رسالة
 deleteMessage = async (req, res) => {
     try {
@@ -114,29 +148,11 @@ deleteMessage = async (req, res) => {
 };
 
 // الحصول على الرسائل غير المقروءة
-getUnreadMessages = async (req, res) => {
-    try {
-        const messages = await Message.find({
-            to: req.params.userId,
-            read: false
-        }).sort({ timestamp: -1 });
-
-        res.status(200).json({
-            status: 'success',
-            results: messages.length,
-            data: messages
-        });
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail',
-            message: error.message
-        });
-    }
-};
 module.exports = {
     createMessagForMarket,
     createMessagForRep,
     getUserMessages,
     deleteMessage,
-    getUnreadMessages
+    createMessagForManger,
+    getMassageForManger
 };

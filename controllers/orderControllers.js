@@ -77,7 +77,6 @@ const getAllOrdersForRep = async (req, res) => {
         }
         if (req.user.role == 'market') {
             const orders = await Order.find({ market: req.user.id, approved: true }, ["client", "product", "quantity"])
-            console.log(req.user)
             console.log({ orders: orders })
             for (const order of orders) {
                 const product = await Product.findById(order.product, ["title"]);
@@ -166,8 +165,6 @@ const getOrderById = async (req, res) => {
 // تحديث حالة الطلب
 const getOrderSearch = async (req, res) => {
     try {
-        console.log(req.user)
-        console.log(req.params.search)
         let data = [];
         if (!req.user) {
             return res.status(401).json({ message: 'يرجي تسجيل الدخول' });

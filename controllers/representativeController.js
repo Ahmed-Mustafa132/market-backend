@@ -122,8 +122,6 @@ const uploudLocation = async (req, res) => {
         const { latitude, longitude } = req.body;
 
 
-        console.log(req.body)
-        console.log(req.user)
         const representative = await Representative.findById(req.user.id);
         if (!representative) {
             return res.status(404).json({ message: "Representative not found" });

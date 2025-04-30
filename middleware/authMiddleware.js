@@ -23,7 +23,6 @@ const checkAuth = async (req, res) => {
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         req.isAuthenticated = true;
-        console.log(decoded.role)
         return res.json(decoded.role);
     }
     catch (error) {
@@ -91,7 +90,6 @@ const isMarketOrRep = async (req, res, next) => {
     if (!token) return res.status(401).send('يرجي تسجيل الدخول  ');
     try {
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded)
         if (decoded.role == "market" || decoded.role == "representative") {
             req.user = decoded;
             console.log(`this is user${req.user}`)   
@@ -109,7 +107,6 @@ const isRepOrUserOrManger = async (req, res, next) => {
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
         if (decoded.role == "representative" || decoded.role == "user" || decoded.role == "manger" || decoded.role == "admin") {
             req.user = decoded;
-            console.log(req.user)
             next(); 
         }
     } catch (error) {
