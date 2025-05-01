@@ -94,6 +94,7 @@ const getAllOrdersForRep = async (req, res) => {
             const orders = await Order.find({ approved: true }, ["client", "product", "quantity"])
             for (const order of orders) {
                 const product = await Product.findById(order.product, ["title"]);
+                console.log(product)
                 const ordardata = {
                     id: order._id,
                     client: order.client,
