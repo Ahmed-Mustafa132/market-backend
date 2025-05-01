@@ -97,7 +97,7 @@ const getAllOrdersForRep = async (req, res) => {
                 const ordardata = {
                     id: order._id,
                     client: order.client,
-                    product: product.title,
+                    product: product.title || "غير متوفر",
                     quantity: order.quantity,
                     approved: order.approved,
                 }
