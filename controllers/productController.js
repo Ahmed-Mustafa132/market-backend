@@ -91,6 +91,7 @@ const createProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
     console.log(req.body)
+    console.log(req.file)
     try {
         const product = await Product.findById(req.params.id)
         product.approved = false
@@ -103,9 +104,14 @@ const updateProduct = async (req, res) => {
         if (req.body.description != null) {
             product.description = req.body.description
         }
-        if (req.file != null) {
-            product.image =
-                req.file.path
+        if (req.file) {
+            // Use the same GCS uploader as in createProduct
+            const imageUrl = await uploadProductToGCS(req.file);
+            product.image = {
+                url: imageUrl.publicUrl,
+                fileName: imageUrl.fileName
+            };
+            console.log(imageUrl)
         }
 
         const updatedProduct = await product.save()
@@ -114,6 +120,7 @@ const updateProduct = async (req, res) => {
         res.status(400).json({ message: error.message })
     }
 }
+
 const deleteProduct = async (req, res) => {
     try {
         await Product.findByIdAndDelete(req.params.id)

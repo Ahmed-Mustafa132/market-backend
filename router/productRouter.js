@@ -21,7 +21,7 @@ router.get('/search/:search', searchProduct);
 router.get('/:id', getProduct);
 router.post('/:id/review',isUser,review)
 router.post('/', isMarket, upload.single('image'), createProduct);
-router.patch('/:id', updateProduct);
+router.patch('/:id', upload.single('image'), updateProduct);
 router.delete('/:id', deleteProduct);
 module.exports = router;
 
