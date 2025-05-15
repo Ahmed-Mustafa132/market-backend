@@ -33,7 +33,6 @@ const getMangerById = async (req, res) => {
         if (!manger) {
             return res.status(404).json({ message: "Representative not found" });
         }
-        console.log(manger)
         const identityFrontSignedUrl = await generateSignedUrl(manger.identityFront.fileName);
         const identityBackSignedUrl = await generateSignedUrl(manger.identityBack.fileName);
 
@@ -52,7 +51,6 @@ const getMangerById = async (req, res) => {
 
         res.status(200).json({massage: "تم جلب المهام بنجاح", data: responseData});
     } catch (error) {
-        console.log(error)
         res.status(500).json({ message: "Error fetching Manger", error });
     }
 };
@@ -151,9 +149,7 @@ const searchInManger = async (req, res) => {
 
         }
         for (const manger of mangers) {
-            console.log(manger)
             const Missions = await Mission.find({ manger: manger.id })
-            console.log(Missions)
             const newManger = {
                 id: manger.id,
                 name: manger.name,
@@ -185,8 +181,7 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-    console.log(req.body)
-    console.log(req.files)  
+
     try {
         const { name, email, password, phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -239,7 +234,6 @@ const register = async (req, res) => {
         res.status(201).json(responseData);
     } catch (error) {
         res.status(500).json({ message: "Something went wrong", error });
-        console.log(error);
     }
 };
 const updateAccount = async (req, res) => {
@@ -260,7 +254,6 @@ const updateAccount = async (req, res) => {
 
         res.status(200).json({ message: "Account updated successfully" });
     } catch (error) {
-        console.log(error)
         res.status(500).json({ message: "Error updating account", error: error.message });
     }
 }

@@ -23,7 +23,7 @@ const repDashboard = async (req, res) => {
         };
         res.status(200).json({ message: "تم جلب البيانات بنجاح", data });
     } catch (error) {
-        console.log(error);
+
         res.status(500).json({ message: "حدث خطأ في جلب البيانات", error: error });
     }
 }
@@ -34,14 +34,14 @@ const getAllRepresentative = async (req, res) => {
     try {
         let representatives = ""
         if (req.params.state == "true") {
-             representatives = await Representative.find({approved:true}, ["name", "id"]);
+            representatives = await Representative.find({ approved: true }, ["name", "id"]);
         }
         if (req.params.state == "false") {
-             representatives = await Representative.find({approved:false}, ["name", "id"]);
+            representatives = await Representative.find({ approved: false }, ["name", "id"]);
         }
 
         for (const rep of representatives) {
-        
+
             const missionComplet = await Mission.countDocuments({ complete: true, representative: rep.id });
             const missionUnComplet = await Mission.countDocuments({ complete: false, representative: rep.id });
 
@@ -49,7 +49,7 @@ const getAllRepresentative = async (req, res) => {
                 id: rep.id,
                 name: rep.name,
                 missionComplet: missionComplet,
-                missionUnComplet:missionUnComplet
+                missionUnComplet: missionUnComplet
             }
             data.push(newRep)
         }
@@ -59,14 +59,14 @@ const getAllRepresentative = async (req, res) => {
     }
 };
 const searchInRepresentative = async (req, res) => {
-    let  data = []
-    let representative 
+    let data = []
+    let representative
     try {
-        
+
         if (req.params.name == "undefined") {
-            representative = await Representative.find({},["name", "id"])
+            representative = await Representative.find({}, ["name", "id"])
         } else {
-            representative = await Representative.find({ name: {$regex:req.params.name} }, ["name", "id"])
+            representative = await Representative.find({ name: { $regex: req.params.name } }, ["name", "id"])
         }
         for (const rep of representative) {
 
@@ -82,7 +82,7 @@ const searchInRepresentative = async (req, res) => {
             data.push(newRep)
         }
         res.status(200).json({ massage: "تم جلب المندوبين بنجاح", data: data });
-        
+
     } catch (error) {
         res.status(404).json({ message: "لا يوجد مندوبين بهذا لاسم    ", error });
     }
@@ -114,6 +114,7 @@ const getRepresentativeById = async (req, res) => {
 
         res.status(200).json(responseData);
     } catch (error) {
+        console.log("Error fetching representative:", error);
         res.status(500).json({ message: "Error fetching Representative", error });
     }
 };
@@ -129,14 +130,13 @@ const uploudLocation = async (req, res) => {
         representative.location = {
             longitude: longitude, latitude: latitude
         };
-        console.log(representative)
         await representative.save();
         res.status(200).json({ message: "Location updated successfully" });
     } catch (error) {
         res.status(500).json({ message: "Error updating location", error });
     }
 };
-const deleteRepresentative = async (req, res) => { 
+const deleteRepresentative = async (req, res) => {
     try {
         const representative = await Representative.findByIdAndDelete(req.params.id);
         if (!representative) {
@@ -173,7 +173,7 @@ const updataAccount = async (req, res) => {
 
         res.status(200).json({ message: "Account updated successfully", data: repData });
     } catch (error) {
-        console.log(error)
+
         res.status(500).json({ message: "Error updating account", error: error.message });
     }
 }
@@ -206,15 +206,23 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-    console.log(req.body)
     try {
-        const { name, email, password,  phone } = req.body;
+        const { name, email, password, phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Upload identity documents and get both public URLs and file names
-        const identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
-        const identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+        let identityFrontUpload, identityBackUpload;
 
+        try {
+            identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
+            identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+        } catch (error) {
+            console.error("GCS upload error:", error);
+            return res.status(500).json({
+                message: "Error uploading identity documents",
+                error: error.message
+            });
+        }
         const representativeData = {
             name,
             email,
@@ -244,7 +252,6 @@ const register = async (req, res) => {
         // Generate signed URLs for the response
         const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
         const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
-
         // Create a response object with signed URLs
         const responseData = {
             _id: newRepresentative._id,
@@ -259,24 +266,24 @@ const register = async (req, res) => {
         res.status(201).json(responseData);
     } catch (error) {
         res.status(500).json({ message: "Something went wrong", error });
-        console.log(error);
+
     }
 };
 const approveData = async (req, res) => {
-  try {
-    const rep = await Representative.findByIdAndUpdate(req.params.id, {
-      approved: true,
-    });
-    if (!rep) {
-        return res.status(404).json({ message: "Representative not found" });
+    try {
+        const rep = await Representative.findByIdAndUpdate(req.params.id, {
+            approved: true,
+        });
+        if (!rep) {
+            return res.status(404).json({ message: "Representative not found" });
+        }
+        rep.approved = true;
+        await rep.save();
+        res.status(200).json({ message: "Representative approved successfully" });
+    } catch (error) {
+
+        res.status(500).json({ message: "Representative approving Market", error });
     }
-    rep.approved = true;
-      await rep.save();
-      res.status(200).json({ message: "Representative approved successfully" });
-  } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Representative approving Market", error });
-  }
 };
 
 module.exports = {

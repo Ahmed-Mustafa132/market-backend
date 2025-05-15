@@ -4,7 +4,7 @@ const Order = require("../model/orderModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
-const marketDashboard = async (req, res) => { 
+const marketDashboard = async (req, res) => {
   let data = {
   }
   try {
@@ -22,40 +22,38 @@ const marketDashboard = async (req, res) => {
     };
     res.status(200).json({ message: "تم جلب البيانات بنجاح", data });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ message: "حدث خطأ في جلب البيانات", error: error });
   }
 
 }
 const updataAccount = async (req, res) => {
-    const { id, account } = req.body
-    try {
-      const market = await Market.findById(id, ["accounts"]);
-      if (!market) {
-            return res.status(404).json({ message: "Representative not found" });
-        }
-      const totalaccounts = +market.accounts + +account
-
-        // Add await here to execute the query
-      const data = await Market.findOneAndUpdate(
-            { _id: id },
-            { accounts: totalaccounts },
-            { new: true }
-        );
-
-        // Convert to plain object or select specific fields
-      const Data = data.toObject ? data.toObject() : {
-        _id: data._id,
-        name: data.name,
-        accounts: data.accounts
-            // Add other fields you need
-        };
-
-      res.status(200).json({ message: "Account updated successfully", data: Data });
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Error updating account", error: error.message });
+  const { id, account } = req.body
+  try {
+    const market = await Market.findById(id, ["accounts"]);
+    if (!market) {
+      return res.status(404).json({ message: "Representative not found" });
     }
+    const totalaccounts = +market.accounts + +account
+
+    // Add await here to execute the query
+    const data = await Market.findOneAndUpdate(
+      { _id: id },
+      { accounts: totalaccounts },
+      { new: true }
+    );
+
+    // Convert to plain object or select specific fields
+    const Data = data.toObject ? data.toObject() : {
+      _id: data._id,
+      name: data.name,
+      accounts: data.accounts
+      // Add other fields you need
+    };
+
+    res.status(200).json({ message: "Account updated successfully", data: Data });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating account", error: error.message });
+  }
 }
 const getAllMarket = async (req, res) => {
   let data = []
@@ -63,24 +61,21 @@ const getAllMarket = async (req, res) => {
   try {
 
     let Markets = ""
-    console.log(req.params.state)
     if (req.params.state == "true") {
       Markets = await Market.find({ approved: 'true' }, ["id", "name"])
-      console.log(Markets)
     } else {
-      Markets = await Market.find({ approved: false },["id", "name"])
+      Markets = await Market.find({ approved: false }, ["id", "name"])
     }
-    console.log(Markets)
     for (const market of Markets) {
       const missions = await Mission.find({ market: market.id })
       for (const mission of missions) {
-         mission.products.forEach((total) => {
-           totleSales += total.quantity
+        mission.products.forEach((total) => {
+          totleSales += total.quantity
         }, 0);
       }
-      
+
       const newMarket = {
-        id:market.id,
+        id: market.id,
         name: market.name,
         missions: missions.length,
         totleSales: totleSales
@@ -89,9 +84,8 @@ const getAllMarket = async (req, res) => {
     }
     res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: data });
   } catch (error) {
-    console.log(error)
-    console.log(error)
-    res.status(500).json({ message: "Error fetching Markets", error:error });
+
+    res.status(500).json({ message: "Error fetching Markets", error: error });
   }
 };
 const getMarketById = async (req, res) => {
@@ -116,10 +110,9 @@ const getMarketById = async (req, res) => {
       createdAt: market.createdAt,
       updatedAt: market.updatedAt,
     };
-    res.status(200).json({massage: "تم جلب المتاجر بنجاح", data: MarketData});
+    res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: MarketData });
   } catch (error) {
     res.status(500).json({ message: "Error fetching Market", error });
-    console.log(error);
   }
 };
 const searchInMarket = async (req, res) => {
@@ -131,7 +124,7 @@ const searchInMarket = async (req, res) => {
       Markets = await Market.find({}, ["name", "id"])
     } else {
       Markets = await Market.find({ name: { $regex: req.params.name } }, ["name", "id"])
-    }    for (const market of Markets) {
+    } for (const market of Markets) {
       const missions = await Mission.find({ market: market.id })
       for (const mission of missions) {
         mission.products.forEach((total) => {
@@ -149,7 +142,6 @@ const searchInMarket = async (req, res) => {
     }
     res.status(200).json({ massage: "تم جلب المتاجر بنجاح", data: data });
   } catch (error) {
-    console.log(error)
     res.status(500).json({ message: "Error fetching Markets", error: error });
   }
 }
@@ -164,13 +156,13 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = jwt.sign({ email: market.email, id: market._id ,role:market.role  }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: market.email, id: market._id, role: market.role }, process.env.JWT_SECRET, {
       expiresIn: "24h",
     });
     res.status(200).json({ token });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error });
-    console.log(error);
+
   }
 };
 const register = async (req, res) => {
@@ -221,7 +213,7 @@ const register = async (req, res) => {
 
     res.status(201).json({ Market: newMarket, token });
   } catch (error) {
-    console.log(error);
+
     console.error("Error creating Market:", error);
     res
       .status(500)

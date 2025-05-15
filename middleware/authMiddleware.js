@@ -27,7 +27,7 @@ const checkAuth = async (req, res) => {
     }
     catch (error) {
         req.isAuthenticated = false;
-        console.log(error);
+         
         return res.status(401).json({ massage: "جلسة غير صالحة" });
     }
 }
@@ -96,7 +96,7 @@ const isMarketOrRep = async (req, res, next) => {
             next();
         }
     } catch (error) {
-        console.log(error)
+         
         return res.status(401).send({ massage: "الرجاء تسجيل الدخول كمندوب او متجر " });
     }
 }

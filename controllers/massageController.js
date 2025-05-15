@@ -18,7 +18,7 @@ const createMessagForMarket = async (req, res) => {
             data: message
         });
     } catch (error) {
-        console.log(error)
+         
         res.status(400).json({
             status: 'fail',
             message: error.message
@@ -40,7 +40,7 @@ const createMessagForRep = async (req, res) => {
             data: message
         });
     } catch (error) {
-        console.log(error)
+         
         res.status(400).json({
             status: 'fail',
             message: error.message
@@ -67,7 +67,7 @@ const getUserMessages = async (req, res) => {
             data: data
         });
     } catch (error) {
-        console.log(error)
+         
         res.status(400).json({
             status: 'fail',
             message: error.message
@@ -91,7 +91,7 @@ const createMessagForManger = async (req, res) => {
             data: message
         });
     } catch (error) {
-        console.log(error)
+         
         res.status(400).json({
             status: 'fail',
             message: error.message
@@ -124,7 +124,7 @@ const getMassageForManger = async (req, res) => {
         res.status(200).json({ status: 200, data: data })
     }
     catch (error) {
-        console.log(error)
+         
         res.status(400).json({
             status: "fail", message: error.message
         })

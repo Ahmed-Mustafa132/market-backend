@@ -120,7 +120,7 @@ const getMissionForManger = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-        console.log(error);
+         
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
@@ -182,7 +182,7 @@ const getStateMissionForManger = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-        console.log(error);
+         
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
@@ -229,7 +229,7 @@ const getMissionById = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-        console.log(error);
+         
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
@@ -252,7 +252,7 @@ const createMission = async (req, res) => {
         res.status(500).json({
             massaeg: "حدث خطاء اثناء ارسال المهمة الرجاء التاكد من  ",
         });
-        console.log(error);
+         
     }
 };
 const deleteMission = async (req, res) => {
@@ -377,7 +377,7 @@ const searchMissionByStateAndName = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-        console.log(error);
+         
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
