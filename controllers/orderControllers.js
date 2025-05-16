@@ -166,7 +166,7 @@ const getOrderById = async (req, res) => {
                 product: product.title,
                 phone: order.phone,
                 address: order.address,
-                market: market.name ? market.name : "غير متوفر",
+                market: market ? market.name : "غير متوفر",
                 quantity: order.quantity
             }
 

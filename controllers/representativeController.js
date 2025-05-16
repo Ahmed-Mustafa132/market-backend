@@ -265,6 +265,7 @@ const register = async (req, res) => {
 
         res.status(201).json(responseData);
     } catch (error) {
+        console.log("Error in registration:", error);
         res.status(500).json({ message: "Something went wrong", error });
 
     }
