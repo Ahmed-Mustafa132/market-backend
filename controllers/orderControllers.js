@@ -121,10 +121,11 @@ const getOrderByState = async (req, res) => {
     const orders = await Order.find({ approved: req.params.state }, ["client", "product", "quantity"])
     for (const order of orders) {
         const product = await Product.findById(order.product, ["title"]);
+        console.log(product)
         const ordardata = {
             id: order._id,
             client: order.client,
-            product: product.title,
+            product: product ? product.title : "غير متوفر",
             quantity: order.quantity,
         }
         data.push(ordardata)
@@ -139,23 +140,41 @@ const getOrderByState = async (req, res) => {
 const getOrderById = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id, ["client", "product", "quantity", "phone", "address", "number", "totalAmount"]);
+        console.log(order)
         const product = await Product.findById(order.product, ["title", "market"]);
-        const market = await Market.findById(product.market, ["name"]);
-        const ordardata = {
-            id: order._id,
-            client: order.client,
-            product: product.title,
-            phone: order.phone,
-            address: order.address,
-            market: market.name,
-            quantity: order.quantity
-        }
-        console.log(ordardata)
+        if (!product) {
+            const ordardata = {
+                id: order._id,
+                client: order.client,
+                product: "غير متوفر",
+                phone: order.phone,
+                address: order.address,
+                market: "غير متوفر",
+                quantity: order.quantity
+            }
 
-        res.status(200).json({
-            message: 'تم جلب الطلب بنجاح',
-            data: ordardata
-        });
+            res.status(200).json({
+                message: 'تم جلب الطلب بنجاح',
+                data: ordardata
+            });
+        } else {
+
+            const market = await Market.findById(product.market, ["name"]);
+            const ordardata = {
+                id: order._id,
+                client: order.client,
+                product: product.title,
+                phone: order.phone,
+                address: order.address,
+                market: market.name ? market.name : "غير متوفر",
+                quantity: order.quantity
+            }
+
+            res.status(200).json({
+                message: 'تم جلب الطلب بنجاح',
+                data: ordardata
+            });
+        }
 
     } catch (error) {
         console.error(error);

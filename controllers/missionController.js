@@ -103,12 +103,15 @@ const getMissionForManger = async (req, res) => {
                 };
                 products.push(newProduct);
             }
-
+            console.log(mission);
+            console.log(marketName);
+            console.log(mangerName);
+            console.log(representativeName);
             const newMission = {
                 id: mission.id,
-                market: marketName.name,
-                manger: mangerName.name,
-                representative: representativeName.name,
+                market: marketName ? marketName.name : "غير محدد",
+                manger: mangerName ? mangerName.name : "غير محدد",
+                representative: representativeName ? representativeName.name : "غير محدد",
                 products: products,
                 complete: mission.complete,
                 approved: mission.approved
@@ -120,7 +123,7 @@ const getMissionForManger = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-         
+        console.error(error);
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
@@ -167,10 +170,10 @@ const getStateMissionForManger = async (req, res) => {
 
             const newMission = {
                 id: mission.id,
-                market: marketName.name,
-                manger: mangerName.name,
-                representative: representativeName.name,
-                products: products,
+                market: marketName ? marketName.name : "غير محدد",
+                manger: mangerName ? mangerName.name : "غير محدد",
+                representative: representativeName ? representativeName.name : "غير محدد",
+                products: products ,
                 complete: mission.complete,
                 approved: mission.approved
             };
@@ -182,7 +185,7 @@ const getStateMissionForManger = async (req, res) => {
             .status(200)
             .json({ message: "تم جلب المهمات بنجاح", data: data });
     } catch (error) {
-         
+         console.error(error);
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }
 };
@@ -387,6 +390,7 @@ const unApproveMission = async (req, res) => {
         const mission = await Mission.findByIdAndUpdate(id, { approved: false }, { new: true });
         res.status(200).json({ message: "تم إلغاء الموافقة على المهمة بنجاح", data: mission });
     } catch (error) {
+
         console.error(error);
         return res.status(500).json({ message: "حدث خطأ في الخادم" });
     }

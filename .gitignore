@@ -128,3 +128,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+config/charming-aegis-452410-g1-72020a196d30.json

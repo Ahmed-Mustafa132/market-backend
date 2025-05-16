@@ -1,6 +1,7 @@
 const Market = require("../model/marketModel");
 const Mission = require("../model/missionModel");
 const Order = require("../model/orderModel");
+const Product = require("../model/productModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
@@ -222,12 +223,17 @@ const register = async (req, res) => {
 };
 const deleteMarket = async (req, res) => {
   try {
-    const market = await Market.findByIdAndDelete(req.params.id);
-    if (!market) {
+    const deleteMarket = await Market.findById(req.params.id);
+    if (!deleteMarket) {
       return res.status(404).json({ message: "Market not found" });
     }
+    const market = await Market.findByIdAndDelete(req.params.id);
+    const missions = await Mission.deleteMany({ market: req.params.id });
+    const orders = await Order.deleteMany({ market: req.params.id });
+    const product = await Product.deleteMany({ market: req.params.id });
     res.status(200).json({ message: "Market deleted successfully" });
   } catch (error) {
+    console.error("Error deleting Market:", error);
     res.status(500).json({ message: "Error deleting Market", error });
   }
 };

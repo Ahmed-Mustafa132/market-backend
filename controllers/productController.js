@@ -7,6 +7,7 @@ const getProducts = async (req, res) => {
     try {
         if (req.params.state === "true") {
             products = await Product.find({ approved: true })
+            console.log("this is products",products)
         } else {
             products = await Product.find({ approved: false })
         }
@@ -14,28 +15,30 @@ const getProducts = async (req, res) => {
             const market = await Market.findById(product.market, "name")
             const productData = {
                 ...product._doc,
-                market: market.name
-            }
+                market: market ? market.name : "غير محدد"
+            };
             data.push(productData)
         }
         res.status(200).json({ message: 'Products fetched successfully', data: data })
     } catch (error) {
-         
+         console.log({ message: error })
         res.status(500).json({ message: "حدث مشكلة في جلب البيانات" })
     }
 }
 const getProduct = async (req, res) => {
     try {
+
         const product = await Product.findById(req.params.id, ["title", "description", "price", "image", "market", "rate"])
         const market = await Market.findById(product.market, "name")
 
 
         const data = {
             ...product._doc,
-            market: market.name
+            market: market ? market.name : "غير محدد"
         }
         res.status(200).json({ message: 'Product fetched successfully', data: data })
     } catch (error) {
+        console.log({ message: error })
         res.status(404).json({ message: error.message })
     }
 }

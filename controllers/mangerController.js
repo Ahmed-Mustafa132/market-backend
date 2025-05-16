@@ -16,7 +16,7 @@ const getAllManger = async (req, res) => {
             const newManger = {
                 id: manger.id,
                 name: manger.name,
-                missions: Missions.length
+                missions: Missions ? Missions.length : 0
             }
             data.push(newManger)
         }
