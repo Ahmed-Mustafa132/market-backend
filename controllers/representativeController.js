@@ -209,10 +209,14 @@ const register = async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Upload identity documents and get both public URLs and file names
+        
+        if (!req.files || !req.files.identityFront || !req.files.identityBack) {
+            return res.status(400).json({
+                message: "صور البطاقة الشخصية مطلوبة"
+            });
+        }
         let identityFrontUpload, identityBackUpload;
-
+        // Upload identity documents and get both public URLs and file names
         try {
             identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
             identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
