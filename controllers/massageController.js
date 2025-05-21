@@ -105,19 +105,19 @@ const getMassageForManger = async (req, res) => {
         const massages = await Message.find({ to: req.user.id })
         for (const massage of massages) {
             if (massage.fromModel === "market") {
-                from = await Market.findById(massage.from, "name")
+                from = await Market.findById(massage.from, "name") || "غير معروف"   
 
             }
             if (massage.fromModel === "representative") {
-                from = await Representative.findById(massage.from, "name")
+                from = await Representative.findById(massage.from, "name") || "غير معروف"
             }
             console.log(from)
             const addData = {
                 id: massage._id,
                 massage: massage.content,
                 fromID: massage.from,
-                from: from.name,
-                fromModel: massage.fromModel,
+                from: from.name || "غير معروف",
+                fromModel: massage.fromModel ,
             }
             data.unshift(addData)
         }

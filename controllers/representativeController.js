@@ -5,6 +5,8 @@ const Order = require("../model/orderModel");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const sendEmail = require('../utils/sendEmail');
+
 const repDashboard = async (req, res) => {
     let data = {
     }
@@ -208,8 +210,27 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
+        if (!name || !email || !password || !phone) {
+            return res.status(400).json({
+                message: "الاسم والبريد الإلكتروني وكلمة المرور ورقم الهاتف مطلوبة"
+            });
+        }
+        const existingRepresentative = await Representative.findOne({ email });
+        if (existingRepresentative) {
+            return res.status(400).json({
+                message: "البريد الإلكتروني مستخدم بالفعل"
+            });
+        }
+        const existingPhone = await Representative.findOne({ phone });
+        if (existingPhone) {
+            return res.status(400).json({
+                message: "رقم الهاتف مستخدم بالفعل"
+            });
+        }
+
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+
         if (!req.files || !req.files.identityFront || !req.files.identityBack) {
             return res.status(400).json({
                 message: "صور البطاقة الشخصية مطلوبة"
@@ -270,7 +291,9 @@ const register = async (req, res) => {
         res.status(201).json(responseData);
     } catch (error) {
         console.log("Error in registration:", error);
-        res.status(500).json({ message: "Something went wrong", error });
+        res.status(500).json({
+            message: "حدث  خطاء اثناء التسجيل الرجاء المحاولة مرة اخري "
+        });
 
     }
 };
@@ -289,6 +312,55 @@ const approveData = async (req, res) => {
 
         res.status(500).json({ message: "Representative approving Market", error });
     }
+}
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+
+        const representative = await Representative.findOne({ email });
+        if (!representative) return res.status(404).json({ message: 'User not found' });
+
+        const token = jwt.sign({ id: representative._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const resetLink = `http://a-souq/reset-password/representative/${token}`;
+
+        await sendEmail(representative.email, 'إعادة تعيين كلمة المرور', `مرحباً ${representative.name}،
+
+        نود إعلامك بأننا تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك.
+        
+        يرجى النقر على الرابط أدناه لإعادة تعيين كلمة المرور:
+        ${resetLink}
+        
+        هذا الرابط صالح لمدة ساعة واحدة فقط.
+        
+        إذا لم تقم بطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد الإلكتروني.
+        
+        مع خالص التحيات،
+        فريق a-souq.com`);
+
+        res.json({ message: 'رابط تحديث كلمة السر تم ارساله الي بريدك' });
+    } catch (error) {
+        console.log(error)
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const representative = await Representative.findById(decoded.id);
+        if (!representative) return res.status(404).json({ message: 'User not found' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        representative.password = hashedPassword;
+        await representative.save();
+
+        res.json({ message: 'تم تحديث كلمة السر بنجاح' });
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ message: 'Invalid or expired token' });
+    }
 };
 
 module.exports = {
@@ -297,7 +369,10 @@ module.exports = {
     searchInRepresentative,
     getRepresentativeById,
     deleteRepresentative,
-    uploudLocation, updataAccount,
+    uploudLocation,
+    updataAccount,
     login,
-    register, approveData
+    register, approveData,
+    forgotPassword,
+    resetPassword
 };

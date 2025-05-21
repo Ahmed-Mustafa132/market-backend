@@ -2,6 +2,7 @@ const User = require('../model/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require("google-auth-library");
+const sendEmail = require('../utils/sendEmail');
 
 
 const getAllUser = async (req, res) => {
@@ -130,6 +131,56 @@ const google = async (req, res) => {
     }
 }
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const resetLink = `http://a-souq/reset-password/user/${token}`;
+
+        await sendEmail(user.email, 'إعادة تعيين كلمة المرور', `مرحباً ${user.name}،
+
+        نود إعلامك بأننا تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك.
+        
+        يرجى النقر على الرابط أدناه لإعادة تعيين كلمة المرور:
+        ${resetLink}
+        
+        هذا الرابط صالح لمدة ساعة واحدة فقط.
+        
+        إذا لم تقم بطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد الإلكتروني.
+        
+        مع خالص التحيات،
+        فريق a-souq.com`);
+
+        res.json({ message: 'رابط تحديث كلمة السر تم ارساله الي بريدك' });
+    } catch (error) {
+        console.log(error)
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({ message: 'تم تحديث كلمة السر بنجاح' });
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ message: 'Invalid or expired token' });
+    }
+};
+
 module.exports = {
     getAllUser,
     searchInUser,
@@ -137,5 +188,7 @@ module.exports = {
     deleteUser,
     login,
     register,
-    google
+    google,
+    forgotPassword,
+    resetPassword
 };

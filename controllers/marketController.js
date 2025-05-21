@@ -5,6 +5,7 @@ const Product = require("../model/productModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const sendEmail = require("../utils/sendEmail");
 const marketDashboard = async (req, res) => {
   let data = {
   }
@@ -252,6 +253,57 @@ const approveData = async (req, res) => {
     res.status(500).json({ message: "Error approving Market", error });
   }
 };
+
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+
+      const market = await Market.findOne({ email });
+      if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
+
+      const token = jwt.sign({ id: market._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+      const resetLink = `http://a-souq/reset-password/markets/${token}`;
+
+      await sendEmail(market.email, 'إعادة تعيين كلمة المرور', `مرحباً ${market.name}،
+
+        نود إعلامك بأننا تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك.
+        
+        يرجى النقر على الرابط أدناه لإعادة تعيين كلمة المرور:
+        ${resetLink}
+        
+        هذا الرابط صالح لمدة ساعة واحدة فقط.
+        
+        إذا لم تقم بطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد الإلكتروني.
+        
+        مع خالص التحيات،
+        فريق a-souq.com`);
+
+        res.json({ message: 'رابط تحديث كلمة السر تم ارساله الي بريدك' });
+    } catch (error) {
+        console.log(error)
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      const market = await Market.findById(decoded.id);
+      if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+      market.password = hashedPassword;
+      await market.save();
+
+        res.json({ message: 'تم تحديث كلمة السر بنجاح' });
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ message: 'تم الغاء صلاحية هذا الرابط' });
+    }
+};
+
 module.exports = {
   marketDashboard,
   getAllMarket,
@@ -259,5 +311,7 @@ module.exports = {
   getMarketById,
   login,
   register,
-  deleteMarket, updataAccount, approveData
+  deleteMarket, updataAccount, approveData,
+  forgotPassword,
+  resetPassword
 };
