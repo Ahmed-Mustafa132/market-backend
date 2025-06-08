@@ -1,6 +1,6 @@
 const Product = require('../model/productModel')
 const Market = require('../model/marketModel')
-const { uploadProductToGCS } = require('../utils/productUploader')
+const  {uploadImage} = require('../utils/fileUploader')
 const getProducts = async (req, res) => {
     const data = []
     let products
@@ -64,30 +64,27 @@ const getProductByMarket = async (req, res) => {
 }
 const createProduct = async (req, res) => {
     const { title, description, price } = req.body;
+    
+    if (!req.file || !title || !description || !price) {
+        return res.status(400).json({ message: "جميع الحقول مطلوبة" });
+    }
 
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "ملف الصورة مطلوب" });
-        }
-        const imageUrl = await uploadProductToGCS(req.file);
-        console.log('Image URL:', imageUrl);
+        const imageUrl = await uploadImage(req.file, "uploads/products");
+        
+        // const imageUrl = await uploadProductToGCS(req.file);
         const productdata = {
             title: title,
             description: description,
             price: price,
             market: req.user.id,
-            image: {
-                url: imageUrl.publicUrl,
-                fileName: imageUrl.fileName
-            },
+            image: imageUrl.publicUrl
         }
         const newProduct = new Product(productdata);
         await newProduct.save();
-
         res.status(201).json(newProduct);
     } catch (error) {
-        console.error('error:', error);
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: "حدث خطأ أثناء إنشاء المنتج", error: error.message });
     }
 }
 

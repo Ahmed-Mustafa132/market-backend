@@ -4,7 +4,7 @@ const Order = require("../model/orderModel");
 const Product = require("../model/productModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const {uploadImage} = require("../utils/fileUploader");
 const sendEmail = require("../utils/sendEmail");
 const marketDashboard = async (req, res) => {
   let data = {
@@ -96,18 +96,18 @@ const getMarketById = async (req, res) => {
     if (!market) {
       return res.status(404).json({ message: "Market not found" });
     }
-    const BusinessRecordsSignedUrl = await generateSignedUrl(
-      market.BusinessRecords.fileName
-    );
-    const taxIDSignedUrl = await generateSignedUrl(market.taxID.fileName);
+    // const BusinessRecordsSignedUrl = await generateSignedUrl(
+    //   market.BusinessRecords.fileName
+    // );
+    // const taxIDSignedUrl = await generateSignedUrl(market.taxID.fileName);
 
     const MarketData = {
       _id: market._id,
       name: market.name,
       email: market.email,
       phone: market.phone,
-      BusinessRecords: BusinessRecordsSignedUrl,
-      taxID: taxIDSignedUrl,
+      BusinessRecords: market.BusinessRecords,
+      taxID: market.taxID,
       accounts: market.accounts,
       createdAt: market.createdAt,
       updatedAt: market.updatedAt,
@@ -174,17 +174,38 @@ const register = async (req, res) => {
       email,
       password,
       role,
-      phone,
-      taxID,
-      BusinessRecords,
+      phone
     } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    if (!req.files || !req.files.taxID || !req.files.BusinessRecords) {
+      return res.status(400).json({ message: "الرجاء ارسال صور للسجل التجاري و البطاقة الضريبية" });
+    }
+    // Check if the market already exists
+    const existingMarket = await Market.findOne({ email });
+    if (existingMarket) {
+      return res.status(400).json({ message: "هذا المتجر موجود في بالفعل " });
+    }
+    let taxIDUrl = null;
+    let BusinessRecordsUrl = null;
+    // Upload tax ID and business records
+    try {
+      const taxIFResult = await uploadImage(req.files.taxID[0], "uploads/market/taxID");
+      taxIDUrl = taxIFResult.publicUrl;
+    } catch (error) {
+      return res.status(500).json({ message: "فشل تحميل البطاقة الضريبية", error: error.message });
+    }
+    try {
+      const BusinessRecordsResult = await uploadImage(req.files.BusinessRecords[0], "uploads/market/BusinessRecords");
+      BusinessRecordsUrl = BusinessRecordsResult.publicUrl;
+    }catch (error) {
+      return res.status(500).json({ message: "فشل تحميل السجل التجاري", error: error.message });
+    }
     // Upload identity documents and get both public URLs and file names
-    const taxIdUpload = await uploadToGCS(req.files.taxID[0]);
-    const BusinessRecordsUpload = await uploadToGCS(
-      req.files.BusinessRecords[0]
-    );
+    // const taxIdUpload = await uploadToGCS(req.files.taxID[0]);
+    // const BusinessRecordsUpload = await uploadToGCS(
+    //   req.files.BusinessRecords[0]
+    // );
 
     const MarketData = {
       name,
@@ -193,16 +214,9 @@ const register = async (req, res) => {
       role,
       phone,
       approved: false,
-      taxID: {
-        url: taxIdUpload.publicUrl,
-        fileName: taxIdUpload.fileName,
-      },
-      BusinessRecords: {
-        url: BusinessRecordsUpload.publicUrl,
-        fileName: BusinessRecordsUpload.fileName,
-      },
+      taxID: taxIDUrl,
+      BusinessRecords: BusinessRecordsUrl,
     };
-
 
     const newMarket = new Market(MarketData);
     await newMarket.save();
@@ -255,17 +269,17 @@ const approveData = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-    try {
+  const { email } = req.body;
+  try {
 
-      const market = await Market.findOne({ email });
-      if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
+    const market = await Market.findOne({ email });
+    if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
 
-      const token = jwt.sign({ id: market._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: market._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-      const resetLink = `http://a-souq/reset-password/markets/${token}`;
+    const resetLink = `http://a-souq/reset-password/markets/${token}`;
 
-      await sendEmail(market.email, 'إعادة تعيين كلمة المرور', `مرحباً ${market.name}،
+    await sendEmail(market.email, 'إعادة تعيين كلمة المرور', `مرحباً ${market.name}،
 
         نود إعلامك بأننا تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك.
         
@@ -279,29 +293,29 @@ const forgotPassword = async (req, res) => {
         مع خالص التحيات،
         فريق a-souq.com`);
 
-        res.json({ message: 'رابط تحديث كلمة السر تم ارساله الي بريدك' });
-    } catch (error) {
-        console.log(error)
-    }
+    res.json({ message: 'رابط تحديث كلمة السر تم ارساله الي بريدك' });
+  } catch (error) {
+    console.log(error)
+  }
 };
 const resetPassword = async (req, res) => {
-    try {
-        const { token } = req.params;
-        const { password } = req.body;
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const market = await Market.findById(decoded.id);
-      if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
+    const market = await Market.findById(decoded.id);
+    if (!market) return res.status(404).json({ message: 'لم يتم العثور علي المتجر' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-      market.password = hashedPassword;
-      await market.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    market.password = hashedPassword;
+    await market.save();
 
-        res.json({ message: 'تم تحديث كلمة السر بنجاح' });
-    } catch (err) {
-        console.log(err);
-        res.status(400).json({ message: 'تم الغاء صلاحية هذا الرابط' });
-    }
+    res.json({ message: 'تم تحديث كلمة السر بنجاح' });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ message: 'تم الغاء صلاحية هذا الرابط' });
+  }
 };
 
 module.exports = {

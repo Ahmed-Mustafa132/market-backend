@@ -41,7 +41,7 @@ app.use("/mission", missionRouter);
 app.use('/massage', massageRouter)
 app.use('/order', orderRouter)
 
-
+app.use("/uploads", express.static("uploads"));
 // MongoDB connection
 mongoose
   .connect(process.env.MONGO_URL)

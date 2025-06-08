@@ -6,7 +6,7 @@ const Product = require("../model/productModel")
 const Representative = require("../model/representativeModel")
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {uploadToGCS, generateSignedUrl} = require("../utils/fileUploader");
+const {uploadImage} = require("../utils/fileUploader");
 const getAllManger = async (req, res) => {
     let data = []
     try {
@@ -33,8 +33,8 @@ const getMangerById = async (req, res) => {
         if (!manger) {
             return res.status(404).json({ message: "Representative not found" });
         }
-        const identityFrontSignedUrl = await generateSignedUrl(manger.identityFront.fileName);
-        const identityBackSignedUrl = await generateSignedUrl(manger.identityBack.fileName);
+        // const identityFrontSignedUrl = await generateSignedUrl(manger.identityFront.fileName);
+        // const identityBackSignedUrl = await generateSignedUrl(manger.identityBack.fileName);
 
 
         // Create a response object with signed URLs
@@ -43,8 +43,8 @@ const getMangerById = async (req, res) => {
             name: manger.name,
             email: manger.email,
             phone: manger.phone,
-            identityFront: identityFrontSignedUrl,
-            identityBack: identityBackSignedUrl,
+            identityFront: manger.identityFront,
+            identityBack: manger.identityBack,
             accounts: manger.accounts,
 
         };
@@ -189,23 +189,31 @@ const register = async (req, res) => {
         if(manger) {
             return res.status(400).json({ message: "Email already exists" });
         }
+
+        let identityFrontUrl = null;
+        let identityBackUrl = null;
+        
+        try {
+            const frontResult = await uploadImage(req.files.identityFront[0], 'uploads/manger/identityFront');
+            identityFrontUrl = frontResult.publicUrl;
+            const backResult = await uploadImage(req.files.identityBack[0], 'uploads/manger/identityBack');
+            identityBackUrl = backResult.publicUrl;
+        }
+        catch (error) {
+            return res.status(400).json({ message: "فشل تحميل الصور", error });
+        }
+
         // Upload identity documents and get both public URLs and file names
-        const identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
-        const identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+        // const identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
+        // const identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
 
         const mangerData = {
             name,
             email,
             password: hashedPassword,
             phone,
-            identityFront: {
-                url: identityFrontUpload.publicUrl,
-                fileName: identityFrontUpload.fileName
-            },
-            identityBack: {
-                url: identityBackUpload.publicUrl,
-                fileName: identityBackUpload.fileName
-            }
+            identityFront: identityFrontUrl,
+            identityBack: identityBackUrl
         };
 
         const newManger = new Manger(mangerData);
@@ -218,20 +226,12 @@ const register = async (req, res) => {
         );
 
         // Generate signed URLs for the response
-        const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
-        const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
+        // const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
+        // const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
 
         // Create a response object with signed URLs
-        const responseData = {
-            _id: newManger._id,
-            name: newManger.name,
-            email: newManger.email,
-            phone: newManger.phone,
-            identityFront: identityFrontSignedUrl,
-            identityBack: identityBackSignedUrl,
-            token
-        };
-        res.status(201).json(responseData);
+
+        res.status(201).json(massage = "تم تسجيل المدير بنجاح");
     } catch (error) {
         res.status(500).json({ message: "Something went wrong", error });
     }

@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const Order = require("../model/orderModel");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { uploadToGCS, generateSignedUrl } = require("../utils/fileUploader");
+const { uploadImage } = require('../utils/fileUploader');
 const sendEmail = require('../utils/sendEmail');
 
 const repDashboard = async (req, res) => {
@@ -96,8 +96,8 @@ const getRepresentativeById = async (req, res) => {
             return res.status(404).json({ message: "Representative not found" });
         }
         // Generate fresh signed URLs for the identity documents
-        const identityFrontSignedUrl = await generateSignedUrl(representative.identityFront.fileName);
-        const identityBackSignedUrl = await generateSignedUrl(representative.identityBack.fileName);
+        // const identityFrontSignedUrl = await generateSignedUrl(representative.identityFront.fileName);
+        // const identityBackSignedUrl = await generateSignedUrl(representative.identityBack.fileName);
 
         // Create a response object with signed URLs
         const responseData = {
@@ -105,8 +105,8 @@ const getRepresentativeById = async (req, res) => {
             name: representative.name,
             email: representative.email,
             phone: representative.phone,
-            identityFront: identityFrontSignedUrl,
-            identityBack: identityBackSignedUrl,
+            identityFront: representative.identityFront,
+            identityBack: representative.identityBack,
             location: representative.location,
             accounts: representative.accounts,
             createdAt: representative.createdAt,
@@ -208,6 +208,7 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
+    
     try {
         const { name, email, password, phone } = req.body;
         if (!name || !email || !password || !phone) {
@@ -236,18 +237,48 @@ const register = async (req, res) => {
                 message: "صور البطاقة الشخصية مطلوبة"
             });
         }
-        let identityFrontUpload, identityBackUpload;
-        // Upload identity documents and get both public URLs and file names
-        try {
-            identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
-            identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
-        } catch (error) {
-            console.error("GCS upload error:", error);
-            return res.status(500).json({
-                message: "Error uploading identity documents",
-                error: error.message
-            });
+
+        let identityFrontUrl = null;
+        let identityBackUrl = null;
+
+        // رفع صورة الهوية الأمامية
+        if (req.files && req.files.identityFront && req.files.identityFront[0]) {
+            try {
+                const frontResult = await uploadImage(req.files.identityFront[0], 'uploads/RepIdentity/');
+                identityFrontUrl = frontResult.publicUrl;
+            } catch (uploadError) {
+                console.error('Front identity upload error:', uploadError);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Failed to upload front identity image: ' + uploadError.message
+                });
+            }
         }
+
+        // رفع صورة الهوية الخلفية
+        if (req.files && req.files.identityBack && req.files.identityBack[0]) {
+            try {
+                const backResult = await uploadImage(req.files.identityBack[0], 'uploads/RepIdentity/');
+                identityBackUrl = backResult.publicUrl;
+            } catch (uploadError) {
+                console.error('Back identity upload error:', uploadError);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Failed to upload back identity image: ' + uploadError.message
+                });
+            }
+        }
+        // Upload identity documents and get both public URLs and file names
+        // try {
+        //     identityFrontUpload = await uploadToGCS(req.files.identityFront[0]);
+        //     identityBackUpload = await uploadToGCS(req.files.identityBack[0]);
+        // } catch (error) {
+        //     console.error("GCS upload error:", error);
+        //     return res.status(500).json({
+        //         message: "Error uploading identity documents",
+        //         error: error.message
+        //     });
+        // }
         const representativeData = {
             name,
             email,
@@ -255,14 +286,8 @@ const register = async (req, res) => {
             role: "representative",
             approved: false,
             phone,
-            identityFront: {
-                url: identityFrontUpload.publicUrl,
-                fileName: identityFrontUpload.fileName
-            },
-            identityBack: {
-                url: identityBackUpload.publicUrl,
-                fileName: identityBackUpload.fileName
-            }
+            identityFront: identityFrontUrl,
+                identityBack: identityBackUrl
         };
 
         const newRepresentative = new Representative(representativeData);
@@ -274,18 +299,15 @@ const register = async (req, res) => {
             { expiresIn: "24h" }
         );
 
-        // Generate signed URLs for the response
-        const identityFrontSignedUrl = await generateSignedUrl(identityFrontUpload.fileName);
-        const identityBackSignedUrl = await generateSignedUrl(identityBackUpload.fileName);
         // Create a response object with signed URLs
         const responseData = {
             _id: newRepresentative._id,
             name: newRepresentative.name,
             email: newRepresentative.email,
             phone: newRepresentative.phone,
-            identityFront: identityFrontSignedUrl,
-            identityBack: identityBackSignedUrl,
-            token
+            identityFront: identityFrontUrl,
+            identityBack: identityBackUrl,
+            token: token
         };
 
         res.status(201).json(responseData);

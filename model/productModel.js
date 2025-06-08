@@ -22,14 +22,10 @@ const productSchema = new mongoose.Schema({
         min: 0
     },
     image: {
-        url: {
-            type: String,
-            required: true
-        },
-        fileName: {
-            type: String,
-            required: true
-        }
+        type: String,
+        required: true,
+        trim: true,
+        unique: true
     },
     market: {
         type: mongoose.Schema.Types.ObjectId,

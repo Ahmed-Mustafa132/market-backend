@@ -40,24 +40,14 @@ const mangerSchema = new mongoose.Schema({
         trim: true
     },
     identityFront: {
-        url: {
-            type: String,
-            required: true
-        },
-        fileName: {
-            type: String,
-            required: true
-        }
+        type: String,
+        required: true,
+        unique: true,
     },
     identityBack: {
-        url: {
-            type: String,
-            required: true
-        },
-        fileName: {
-            type: String,
-            required: true
-        }
+        type: String,
+        required: true,
+        unique: true,
     },
     accounts: {
         type: String,
