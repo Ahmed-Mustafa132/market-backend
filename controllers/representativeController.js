@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const Order = require("../model/orderModel");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { uploadImage } = require('../utils/fileUploader');
+const { uploadImage, DeleteFile } = require('../utils/fileUploader');
 const sendEmail = require('../utils/sendEmail');
 
 const repDashboard = async (req, res) => {
@@ -140,10 +140,17 @@ const uploudLocation = async (req, res) => {
 };
 const deleteRepresentative = async (req, res) => {
     try {
-        const representative = await Representative.findByIdAndDelete(req.params.id);
+        const representative = await Representative.findById(req.params.id);
         if (!representative) {
-            return res.status(404).json({ message: "لا يوجد مندوب  " });
+            return res.status(404).json({ message: "لا يوجد مندوب " });
         }
+        try {
+            const deleteIdentityFront = await DeleteFile(representative.identityFront)
+            const deleteIdentityBack = await DeleteFile(representative.identityBack)
+        } catch (err) {
+            res.json({massage:"فشل مسح صور البطاقة"})
+        }
+        const deleteRep =  await Representative.findOneAndDelete(req.params.id)
         res.status(200).json({ message: "Market deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting Market", error });

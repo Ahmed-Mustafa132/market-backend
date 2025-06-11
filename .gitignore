@@ -41,7 +41,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
-
+uploads/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
@@ -128,4 +128,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-config/charming-aegis-452410-g1-72020a196d30.json

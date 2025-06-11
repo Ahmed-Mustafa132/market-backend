@@ -1,6 +1,6 @@
 const Product = require('../model/productModel')
 const Market = require('../model/marketModel')
-const  {uploadImage} = require('../utils/fileUploader')
+const  {uploadImage,DeleteFile} = require('../utils/fileUploader')
 const getProducts = async (req, res) => {
     const data = []
     let products
@@ -90,8 +90,6 @@ const createProduct = async (req, res) => {
 
 
 const updateProduct = async (req, res) => {
-    console.log(req.body)
-    console.log(req.file)
     try {
         const product = await Product.findById(req.params.id)
         product.approved = false
@@ -105,17 +103,15 @@ const updateProduct = async (req, res) => {
             product.description = req.body.description
         }
         if (req.file) {
-            // Use the same GCS uploader as in createProduct
-            const imageUrl = await uploadProductToGCS(req.file);
-            product.image = {
-                url: imageUrl.publicUrl,
-                fileName: imageUrl.fileName
-            };
-            console.log(imageUrl)
+            const imageUrl = await uploadImage(req.file, "uploads/products");
+            const deleted = await DeleteFile(product.image)   
+            product.image = imageUrl.publicUrl
         }
+            // Use the same GCS uploader as in createProduct
+                // const imageUrl = await uploadProductToGCS(req.file);
 
         const updatedProduct = await product.save()
-        res.json(updatedProduct)
+        res.json({massage:"تم تحديث المنتج  بنجاح"})
     } catch (error) {
         res.status(400).json({ message: error.message })
     }
@@ -123,6 +119,13 @@ const updateProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
     try {
+        const product = await Product.findById(req.params.id)
+        try {
+            const deleted = await DeleteFile(product.image)
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({ message: error.message })
+        }
         await Product.findByIdAndDelete(req.params.id)
         res.json({ message: 'Product deleted' })
     } catch (error) {
